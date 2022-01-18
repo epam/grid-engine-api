@@ -1,0 +1,8 @@
+[# th:if="${fromHead}"]
+    head
+[/]
+[# th:unless="${fromHead}"]
+    tail
+[/]
+-n [(${lines})]
+[(${path})]

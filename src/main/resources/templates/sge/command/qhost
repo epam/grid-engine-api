@@ -1,0 +1,8 @@
+qhost
+[# th:if="${filter != null and not #lists.isEmpty(filter.hosts)}"]
+-h
+ [# th:each="p : ${filter.hosts}"]
+ [(${p})]
+ [/]
+[/]
+-xml

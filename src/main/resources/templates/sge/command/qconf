@@ -1,0 +1,12 @@
+qconf
+[# th:with="groupsArePresented=${filter != null and not #lists.isEmpty(filter.hostGroupNames)}"]
+    [# th:if="${groupsArePresented}"]
+        [# th:each="hostGroupName : ${filter.hostGroupNames}"]
+            -shgrp
+            [(${hostGroupName})]
+        [/]
+    [/]
+    [# th:unless="${groupsArePresented}"]
+        -shgrpl
+    [/]
+[/]

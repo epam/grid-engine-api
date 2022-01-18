@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+
+  sge-container:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "8080:8080"
+      - "5005:5005"

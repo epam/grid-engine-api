@@ -1,0 +1,5 @@
+qconf
+[# th:each="parallelEnvs : ${filter.parallelEnvs}"]
+ -sp
+ [(${parallelEnvs})]
+[/]

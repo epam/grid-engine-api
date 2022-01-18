@@ -1,0 +1,145 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+    id 'pmd'
+    id "org.springframework.boot" version "$springBootVersion"
+    id "io.spring.dependency-management" version "$springDependencyManagementVersion"
+    id 'jacoco'
+    id "org.sonarqube" version "$sonarQubeVersion"
+    id "com.avast.gradle.docker-compose" version "$dockerComposePluginVersion"
+}
+
+group 'com.epam.grid.engine'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+
+    /* Lombok */
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+
+    /* Spring */
+    implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+
+    /*SpringFox*/
+    implementation "io.springfox:springfox-boot-starter:$swaggerVersion"
+
+    /* logback */
+    implementation "ch.qos.logback:logback-core:$logbackVersion"
+    implementation "ch.qos.logback:logback-classic:$logbackVersion"
+
+    /*Jackson Dataformat XML*/
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jacksonDFVersion"
+
+    /*JAXB API*/
+    implementation "jakarta.xml.bind:jakarta.xml.bind-api:$jakartaBindingVersion"
+    implementation "com.sun.xml.bind:jaxb-impl:$jaxbImplVersion"
+    implementation "jakarta.activation:jakarta.activation-api:$jakartaActivationVersion"
+
+    /* JUNIT */
+    testImplementation "org.junit.jupiter:junit-jupiter:$junitJupiterVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion"
+    testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    testImplementation "org.junit.platform:junit-platform-suite-api:$junitPlatformSuiteVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-suite-engine:$junitPlatformSuiteVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-engine:$junitPlatformVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitPlatformVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-commons:$junitPlatformVersion"
+
+    /* Collection4 */
+    implementation "org.apache.commons:commons-collections4:$commonsVersion"
+    implementation "commons-io:commons-io:$commonsIOVersions"
+
+    /* Thymeleaf */
+    implementation "org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion"
+
+    /* MapStruct */
+    compileOnly "org.mapstruct:mapstruct:$mapStructVersion"
+    testCompileOnly "org.mapstruct:mapstruct:$mapStructVersion"
+    annotationProcessor "org.mapstruct:mapstruct-processor:$mapStructVersion"
+
+    /* Swagger2Markup */
+    implementation "io.github.swagger2markup:swagger2markup:$swagger2markupVersion"
+}
+
+pmd {
+    ruleSetFiles = files("$rootDir/config/pmd/pmd-ruleset.xml")
+    ruleSets = []
+    consoleOutput = true
+}
+
+checkstyle {
+    ignoreFailures = false
+    maxWarnings = 0
+}
+
+jacoco {
+    toolVersion = "0.8.7"
+    reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+}
+
+test {
+    filter {
+        includeTestsMatching "*Suite"
+        excludeTestsMatching "Swagger2MarkupTestsSuite"
+    }
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+    }
+}
+
+sonarqube {
+    properties {
+        property 'sonar.projectName', 'Grid-Engine-API'
+        property 'sonar.coverage.exclusions', "**/com/epam/grid/engine/entity/**," +
+                "**/com/epam/grid/engine/provider/utils/sge/SgeCommandsUtils.java," +
+                "**/com/epam/grid/engine/controller/ControllerAdvisor.java"
+    }
+}
+
+tasks.named('sonarqube').configure {
+    dependsOn test
+}
+
+dockerCompose {
+    useComposeFiles = ["docker/docker-compose.yaml"]
+    startedServices = ['sge-container']
+    projectName = 'grid-engine-api'
+}
+
+composeUp.dependsOn(clean, assemble.mustRunAfter(clean))
+
+task unitTest(type: Test) {
+    filter {includeTestsMatching("UnitTestsSuite")}
+    useJUnitPlatform()
+    group = 'verification'
+}
+
+task componentTest(type: Test) {
+    filter {includeTestsMatching("ComponentTestsSuite")}
+    useJUnitPlatform()
+    group = 'verification'
+}
+
+task runConvertSwagger2markup(type: Test) {
+    filter {includeTestsMatching("Swagger2MarkupTestsSuite")}
+    useJUnitPlatform()
+    group = 'documentation'
+}

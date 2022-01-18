@@ -1,0 +1,3 @@
+qconf
+-dq
+[(${queue})]

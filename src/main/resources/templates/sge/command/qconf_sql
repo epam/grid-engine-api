@@ -1,0 +1,12 @@
+qconf
+[# th:with="queuesArePresented=${filter != null and not #lists.isEmpty(filter.queues)}"]
+ [# th:if="${queuesArePresented}"]
+  -sq
+  [# th:each="q : ${filter.queues}"]
+   [(${q})]
+  [/]
+ [/]
+ [# th:unless="${queuesArePresented}"]
+ -sql
+ [/]
+[/]

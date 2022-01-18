@@ -1,0 +1,10 @@
+qdel
+[# th:if="${filter.force}"]
+    -f
+[/]
+[# th:if="${filter.user != null}"]
+    -u [(${filter.user})]
+[/]
+[# th:if="${filter.id != 0}"]
+    [(${filter.id})]
+[/]

@@ -1,0 +1,11 @@
+qstat
+[# th:if="${filter != null and not #lists.isEmpty(filter.owners)}"]
+-u
+    [# th:each="owner : ${filter.owners}"]
+    [(${owner})]
+    [/]
+[/]
+[# th:if="${state != null}"]
+-s [(${state})]
+[/]
+-xml
