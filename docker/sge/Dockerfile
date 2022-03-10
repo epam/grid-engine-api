@@ -2,7 +2,7 @@ ARG BASE_IMAGE=robsyme/docker-sge
 
 FROM $BASE_IMAGE
 
-ARG JAVA_DISTRO_URL="http://ppa.launchpad.net/openjdk-r/ppa/ubuntu/pool/main/o/openjdk-lts/openjdk-11-jre-headless_11.0.11+9-0ubuntu2~16.04_amd64.deb"
+ARG JAVA_DISTRO_URL="http://ppa.launchpad.net/openjdk-r/ppa/ubuntu/pool/main/o/openjdk-lts/openjdk-11-jre-headless_11.0.14+9-0ubuntu2~16.04_amd64.deb"
 
 RUN apt-get -y update && \
     curl $JAVA_DISTRO_URL -o /tmp/java_distr.deb && \
