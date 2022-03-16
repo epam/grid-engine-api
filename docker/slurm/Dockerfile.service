@@ -1,4 +1,6 @@
-FROM grid-engine-api-slurm-base
+ARG BASE_IMAGE
+
+FROM $BASE_IMAGE
 
 RUN yum -y update && \
     yum -y install java-11-openjdk

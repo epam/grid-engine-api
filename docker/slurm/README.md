@@ -7,7 +7,7 @@
    choose Tasks -> docker -> composeUp, right click on composeUp, select "Modify Run Configuration".
    Choose name for your configuration (for example composeUp-SLURM). Then move down in this window
    and click on "Edit environment variables" button. In the new window add environment variable with
-   the name GRID_ENGINE_API_TARGET_ENGINE and value SLURM. Save all changes.
+   the name TARGET_GRID_ENGINE and value SLURM. Save all changes.
 4. Choose your saved configuration in IDEA's "Select Run/Debug Configuration" window.
 5. Run composeUp task with your configuration, under the hood it will clean project, re-build jar
    file, build docker image and finally run a container with application.

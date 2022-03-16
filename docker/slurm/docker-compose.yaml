@@ -50,6 +50,8 @@ services:
     image: grid-engine-api-slurm-service
     build:
       context: ../..
+      args:
+        BASE_IMAGE: grid-engine-api-slurm-base
       dockerfile: ./docker/slurm/Dockerfile.service
     command: [ "slurmd" ]
     hostname: c1
