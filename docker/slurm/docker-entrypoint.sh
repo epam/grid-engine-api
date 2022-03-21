@@ -36,7 +36,8 @@ then
     echo "-- slurmdbd is now active ..."
 
     echo "---> Starting the Slurm Controller Daemon (slurmctld) ..."
-    exec gosu slurm /usr/sbin/slurmctld -Dvvv
+    exec gosu slurm /usr/sbin/slurmctld -Dvvv &
+    exec java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 /opt/grid-engine-api-1.0-SNAPSHOT.jar
 fi
 
 if [ "$1" = "slurmd" ]
@@ -54,8 +55,7 @@ then
     echo "-- slurmctld is now active ..."
 
     echo "---> Starting the Slurm Node Daemon (slurmd) ..."
-    exec /usr/sbin/slurmd -Dvvv &
-    exec java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 /opt/grid-engine-api-1.0-SNAPSHOT.jar
+    exec /usr/sbin/slurmd -Dvvv
 fi
 
 exec "$@"

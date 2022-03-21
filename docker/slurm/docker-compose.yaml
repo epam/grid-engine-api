@@ -32,7 +32,12 @@ services:
       - mysql
 
   slurmctld:
-    image: grid-engine-api-slurm-base
+    image: grid-engine-api-slurm-service
+    build:
+      context: ../..
+      args:
+        BASE_IMAGE: grid-engine-api-slurm-base
+      dockerfile: ./docker/slurm/Dockerfile.service
     command: [ "slurmctld" ]
     container_name: slurmctld
     hostname: slurmctld
@@ -43,30 +48,26 @@ services:
       - var_log_slurm:/var/log/slurm
     expose:
       - "6817"
+      - "8080"
+      - "5005"
+    ports:
+      - "8080:8080"
+      - "5005:5005"
     depends_on:
       - "slurmdbd"
 
-  c1:
-    image: grid-engine-api-slurm-service
-    build:
-      context: ../..
-      args:
-        BASE_IMAGE: grid-engine-api-slurm-base
-      dockerfile: ./docker/slurm/Dockerfile.service
+  worker:
+    image: grid-engine-api-slurm-base
     command: [ "slurmd" ]
-    hostname: c1
-    container_name: c1
+    hostname: worker
+    container_name: worker
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
     expose:
-      - "8080"
-      - "5005"
-    ports:
-      - "8080:8080"
-      - "5005:5005"
+      - "6818"
     depends_on:
       - "slurmctld"
 
