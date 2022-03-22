@@ -58,7 +58,7 @@ $ docker build -f ./docker/Dockerfile -t grid-engine-api:latest .
 $ docker run -d -p 8080:8080 grid-engine-api:latest 
 ```
 
-For more information please [see](docker/README.md)
+For more information please [see](docker/sge/README.md)
 
 ### System overview
 ____

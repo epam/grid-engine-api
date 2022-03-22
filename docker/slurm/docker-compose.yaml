@@ -1,0 +1,80 @@
+version: "3.8"
+
+services:
+
+  mysql:
+    image: mysql:5.7
+    hostname: mysql
+    container_name: mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: slurm_acct_db
+      MYSQL_USER: slurm
+      MYSQL_PASSWORD: password
+    volumes:
+      - var_lib_mysql:/var/lib/mysql
+
+  slurmdbd:
+    image: grid-engine-api-slurm-base
+    build:
+      context: ../..
+      dockerfile: ./docker/slurm/Dockerfile.base
+    command: [ "slurmdbd" ]
+    container_name: slurmdbd
+    hostname: slurmdbd
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6819"
+    depends_on:
+      - mysql
+
+  slurmctld:
+    image: grid-engine-api-slurm-service
+    build:
+      context: ../..
+      args:
+        BASE_IMAGE: grid-engine-api-slurm-base
+      dockerfile: ./docker/slurm/Dockerfile.service
+    command: [ "slurmctld" ]
+    container_name: slurmctld
+    hostname: slurmctld
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - slurm_jobdir:/data
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6817"
+      - "8080"
+      - "5005"
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    depends_on:
+      - "slurmdbd"
+
+  worker:
+    image: grid-engine-api-slurm-base
+    command: [ "slurmd" ]
+    hostname: worker
+    container_name: worker
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - slurm_jobdir:/data
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6818"
+    depends_on:
+      - "slurmctld"
+
+
+volumes:
+  etc_munge:
+  etc_slurm:
+  slurm_jobdir:
+  var_lib_mysql:
+  var_log_slurm:

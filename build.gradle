@@ -119,27 +119,37 @@ tasks.named('sonarqube').configure {
 }
 
 dockerCompose {
-    useComposeFiles = ["docker/docker-compose.yaml"]
-    startedServices = ['sge-container']
+    String targetEngine = System.getenv("TARGET_GRID_ENGINE") ?: "SGE"
+    switch (targetEngine) {
+        case "SGE":
+            useComposeFiles = ["docker/sge/docker-compose.yaml"]
+            startedServices = ['sge-container']
+            break
+        case "SLURM":
+            useComposeFiles = ["docker/slurm/docker-compose.yaml"]
+            startedServices = ['mysql', 'slurmdbd', 'slurmctld', 'worker']
+            break
+        default: throw new RuntimeException("Unknown engine type: " + targetEngine)
+    }
     projectName = 'grid-engine-api'
 }
 
 composeUp.dependsOn(clean, assemble.mustRunAfter(clean))
 
 task unitTest(type: Test) {
-    filter {includeTestsMatching("UnitTestsSuite")}
+    filter { includeTestsMatching("UnitTestsSuite") }
     useJUnitPlatform()
     group = 'verification'
 }
 
 task componentTest(type: Test) {
-    filter {includeTestsMatching("ComponentTestsSuite")}
+    filter { includeTestsMatching("ComponentTestsSuite") }
     useJUnitPlatform()
     group = 'verification'
 }
 
 task runConvertSwagger2markup(type: Test) {
-    filter {includeTestsMatching("Swagger2MarkupTestsSuite")}
+    filter { includeTestsMatching("Swagger2MarkupTestsSuite") }
     useJUnitPlatform()
     group = 'documentation'
 }

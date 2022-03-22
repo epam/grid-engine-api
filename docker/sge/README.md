@@ -1,4 +1,4 @@
-# Configuring IDEA to run grid-engine in Docker container and be able to attach the debug process
+# Configuring IDEA to run SGE grid-engine in Docker container and be able to attach the debug process
 
 1. Docker IDEA plugin should be pre-installed. 
 2. Should be pre-installed docker-compose version not lower 1.29.2, or docker desktop version not lower 3.5.2
