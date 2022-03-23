@@ -127,7 +127,7 @@ dockerCompose {
             break
         case "SLURM":
             useComposeFiles = ["docker/slurm/docker-compose.yaml"]
-            startedServices = ['mysql', 'slurmdbd', 'slurmctld', 'worker']
+            startedServices = ['mysql', 'slurmdbd', 'slurmctld', 'worker1', 'worker2']
             break
         default: throw new RuntimeException("Unknown engine type: " + targetEngine)
     }
