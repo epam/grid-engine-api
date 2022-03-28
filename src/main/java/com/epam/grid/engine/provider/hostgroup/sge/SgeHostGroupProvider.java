@@ -29,7 +29,7 @@ import com.epam.grid.engine.entity.hostgroup.sge.SgeHostGroup;
 import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.mapper.hostgroup.sge.SgeHostGroupMapper;
 import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.sge.common.SgeOutputParsingUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -143,7 +143,7 @@ public class SgeHostGroupProvider implements HostGroupProvider {
 
     private void validateCommandResult(final CommandResult commandResult) {
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult);
+            CommandsUtils.throwExecutionDetails(commandResult);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }

@@ -31,7 +31,7 @@ import com.epam.grid.engine.entity.queue.sge.SgeQueue;
 import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.mapper.queue.sge.SgeQueueMapper;
 import com.epam.grid.engine.provider.queue.QueueProvider;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.sge.common.SgeOutputParsingUtils;
 import com.epam.grid.engine.provider.utils.sge.queue.SgeDeleteQueueCommandUtils;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +48,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils.determineStatus;
-import static com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils.mergeOutputLines;
+import static com.epam.grid.engine.provider.utils.CommandsUtils.determineStatus;
+import static com.epam.grid.engine.provider.utils.CommandsUtils.mergeOutputLines;
 import static com.epam.grid.engine.provider.utils.sge.common.SgeEntitiesRegistrationUtils.normalizePathToUnixFormat;
 import static com.epam.grid.engine.provider.utils.sge.common.SgeEntitiesRegistrationUtils.deleteTemporaryDescriptionFile;
 import static com.epam.grid.engine.utils.TextConstants.SPACE;
@@ -276,7 +276,7 @@ public class SgeQueueProvider implements QueueProvider {
 
     private void verifyProcessStatus(final CommandResult commandResult, final HttpStatus status) {
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult, status);
+            CommandsUtils.throwExecutionDetails(commandResult, status);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }

@@ -10,10 +10,11 @@ import com.epam.grid.engine.entity.host.Host;
 import com.epam.grid.engine.entity.host.slurm.SlurmHost;
 import com.epam.grid.engine.mapper.host.slurm.SlurmHostMapper;
 import com.epam.grid.engine.provider.host.HostProvider;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.slurm.host.ScontrolShowNodeParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmHostProvider implements HostProvider {
 
     private static final String FILTER = "filter";
@@ -47,11 +49,10 @@ public class SlurmHostProvider implements HostProvider {
     public Listing<Host> listHosts(final HostFilter hostFilter) {
         final Context context = new Context();
         context.setVariable(FILTER, hostFilter);
-        final String[] hostCommand = commandCompiler.compileCommand(getProviderType(), SCONTROL_COMMAND,
-                context);
+        final String[] hostCommand = commandCompiler.compileCommand(getProviderType(), SCONTROL_COMMAND, context);
         final CommandResult commandResult = simpleCmdExecutor.execute(hostCommand);
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult);
+            CommandsUtils.throwExecutionDetails(commandResult);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }

@@ -2,7 +2,6 @@ package com.epam.grid.engine.provider.utils.slurm.host;
 
 import com.epam.grid.engine.entity.host.slurm.SlurmHost;
 import com.epam.grid.engine.exception.GridEngineException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -12,11 +11,10 @@ import java.util.stream.Collectors;
 
 /**
  * This class parses the result of SLURM
- * scontrol show node <ID> command into SlurmHost entity
+ * scontrol show node ID command into SlurmHost entity.
  *
  * @see com.epam.grid.engine.entity.host.slurm.SlurmHost
  */
-@Slf4j
 @Component
 public class ScontrolShowNodeParser {
 
@@ -46,9 +44,8 @@ public class ScontrolShowNodeParser {
                     .allocatedMemory(Long.valueOf(results.get(ALLOCATED_MEMORY)))
                     .build();
         } catch (final NumberFormatException e) {
-            log.error(CANT_PARSE_STDOUT_TO_SLURM_HOST);
             throw new GridEngineException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    CANT_PARSE_STDOUT_TO_SLURM_HOST);
+                    CANT_PARSE_STDOUT_TO_SLURM_HOST, e);
         }
     }
 
