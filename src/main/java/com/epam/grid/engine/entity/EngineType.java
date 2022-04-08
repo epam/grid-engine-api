@@ -26,5 +26,9 @@ public enum EngineType {
     /**
      * Sun Grig Engine.
      */
-    SGE
+    SGE,
+    /**
+     * SLURM.
+     */
+    SLURM
 }

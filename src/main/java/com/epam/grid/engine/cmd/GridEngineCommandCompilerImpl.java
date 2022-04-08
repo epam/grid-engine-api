@@ -84,6 +84,9 @@ public class GridEngineCommandCompilerImpl implements GridEngineCommandCompiler 
             case SGE:
                 path = "sge";
                 break;
+            case SLURM:
+                path = "slurm";
+                break;
             default:
                 throw new GridEngineException(HttpStatus.NO_CONTENT,
                         String.format("Engine type %s is not supported", engineType));

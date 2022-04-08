@@ -21,7 +21,7 @@ package com.epam.grid.engine.service;
 
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
-import com.epam.grid.engine.provider.hostgroup.sge.SgeHostGroupProvider;
+import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ public class HostGroupOperationProviderServiceTest {
     private HostGroupOperationProviderService hostGroupOperationProviderService;
 
     @SpyBean
-    private SgeHostGroupProvider sgeHostGroupProvider;
+    private HostGroupProvider hostGroupProvider;
 
     @Test
     public void shouldReturnCorrectResponse() {
@@ -57,9 +57,9 @@ public class HostGroupOperationProviderServiceTest {
         final HostGroupFilter hostGroupFilter = new HostGroupFilter();
         hostGroupFilter.setHostGroupNames(Collections.singletonList(HOST_GROUP_NAME));
 
-        doReturn(hostGroups).when(sgeHostGroupProvider).listHostGroups(hostGroupFilter);
+        doReturn(hostGroups).when(hostGroupProvider).listHostGroups(hostGroupFilter);
         Assertions.assertEquals(hostGroups, hostGroupOperationProviderService.listHostGroups(hostGroupFilter));
-        verify(sgeHostGroupProvider, times(1)).listHostGroups(hostGroupFilter);
+        verify(hostGroupProvider, times(1)).listHostGroups(hostGroupFilter);
     }
 
     @Test
@@ -68,8 +68,8 @@ public class HostGroupOperationProviderServiceTest {
                 .hostGroupName(HOST_GROUP_NAME)
                 .hostGroupEntry(Collections.singletonList(HOST_GROUP_ENTRY))
                 .build();
-        doReturn(hostGroup).when(sgeHostGroupProvider).getHostGroup(HOST_GROUP_NAME);
+        doReturn(hostGroup).when(hostGroupProvider).getHostGroup(HOST_GROUP_NAME);
         Assertions.assertEquals(hostGroup, hostGroupOperationProviderService.getHostGroup(HOST_GROUP_NAME));
-        verify(sgeHostGroupProvider, times(1)).getHostGroup(HOST_GROUP_NAME);
+        verify(hostGroupProvider, times(1)).getHostGroup(HOST_GROUP_NAME);
     }
 }

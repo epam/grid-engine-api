@@ -40,6 +40,8 @@ services:
       dockerfile: ./docker/slurm/Dockerfile.service
     command: [ "slurmctld" ]
     container_name: slurmctld
+    environment:
+      TARGET_GRID_ENGINE: SLURM
     hostname: slurmctld
     volumes:
       - etc_munge:/etc/munge

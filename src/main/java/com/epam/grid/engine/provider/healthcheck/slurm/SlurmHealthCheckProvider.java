@@ -17,44 +17,35 @@
  *
  */
 
-package com.epam.grid.engine.provider.healthcheck.sge;
+package com.epam.grid.engine.provider.healthcheck.slurm;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
-import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
-import com.epam.grid.engine.provider.utils.sge.healthcheck.QpingCommandParser;
-import org.springframework.beans.factory.annotation.Value;
+import com.epam.grid.engine.provider.utils.slurm.healthcheck.ShowConfigCommandParser;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
 /**
  * Provider class that addressing a request
- * to the Sun Grid Engine and processes the response received.
+ * to the SLURM Grid Engine and processes the response received.
  */
 @Service
-@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
-public class SgeHealthCheckProvider implements HealthCheckProvider {
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
+public class SlurmHealthCheckProvider implements HealthCheckProvider {
 
-    private static final String QPING_COMMAND = "qping";
-    private static final String DEFINE_QMASTER_COMMAND = "define_qmaster";
+    private static final String SHOWCONFIG_COMMAND = "showConfig";
 
-    private final String qmasterPort;
-    private final String qmasterHostPath;
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final GridEngineCommandCompiler commandCompiler;
 
-    public SgeHealthCheckProvider(
-            @Value("${sge.qmaster.port}") final String qmasterPort,
-            @Value("${sge.qmaster.host.path}") final String qmasterHostPath,
+    public SlurmHealthCheckProvider(
             final SimpleCmdExecutor simpleCmdExecutor,
             final GridEngineCommandCompiler commandCompiler
     ) {
-        this.qmasterPort = qmasterPort;
-        this.qmasterHostPath = qmasterHostPath;
         this.simpleCmdExecutor = simpleCmdExecutor;
         this.commandCompiler = commandCompiler;
     }
@@ -67,7 +58,7 @@ public class SgeHealthCheckProvider implements HealthCheckProvider {
      */
     @Override
     public EngineType getProviderType() {
-        return EngineType.SGE;
+        return EngineType.SLURM;
     }
 
     /**
@@ -78,28 +69,15 @@ public class SgeHealthCheckProvider implements HealthCheckProvider {
      */
     @Override
     public HealthCheckInfo checkHealth() {
-        return executeQpingCommand();
+        return executeShowConfigCommand();
     }
 
-    private HealthCheckInfo executeQpingCommand() {
-        final CommandResult result = simpleCmdExecutor.execute(getQpingCommand());
-        return QpingCommandParser.parseQpingResult(result);
+    private HealthCheckInfo executeShowConfigCommand() {
+        return ShowConfigCommandParser.parseShowConfigResult(simpleCmdExecutor.execute(getShowConfigCommand()));
     }
 
-    private String[] getQpingCommand() {
-        final Context context = new Context();
-        context.setVariable("qmasterHost", getNameQmasterHost());
-        context.setVariable("qmasterPort", qmasterPort);
-        return commandCompiler.compileCommand(getProviderType(), QPING_COMMAND, context);
+    private String[] getShowConfigCommand() {
+        return commandCompiler.compileCommand(getProviderType(), SHOWCONFIG_COMMAND, new Context());
     }
 
-    private String getNameQmasterHost() {
-        final Context context = new Context();
-        context.setVariable("qmasterHostPath", qmasterHostPath);
-        final String[] defineQmasterCommand = commandCompiler.compileCommand(getProviderType(),
-                DEFINE_QMASTER_COMMAND, context);
-
-        final CommandResult result = simpleCmdExecutor.execute(defineQmasterCommand);
-        return QpingCommandParser.parseQmasterHostName(result);
-    }
 }

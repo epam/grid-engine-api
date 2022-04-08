@@ -19,20 +19,14 @@
 
 package com.epam.grid.engine.service;
 
-import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
 import com.epam.grid.engine.entity.parallelenv.PeRegistrationVO;
 import com.epam.grid.engine.provider.parallelenv.ParallelEnvProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This class determines which of the grid engines shall be used and calls appropriate methods.
@@ -40,18 +34,17 @@ import java.util.stream.Collectors;
 @Service
 public class ParallelEnvOperationProviderService {
 
-    private final EngineType engineType;
-
-    private Map<EngineType, ParallelEnvProvider> providers;
+    private final ParallelEnvProvider parallelEnvProvider;
 
     /**
-     * This method sets grid engine type in the context.
+     * Constructor, sets created parallelEnvProvider bean to the class field.
      *
-     * @param engineType type of grid engine
-     * @see EngineType
+     * @param parallelEnvProvider created ParallelEnvProvider
+     * @see ParallelEnvProvider
      */
-    public ParallelEnvOperationProviderService(@Value("${grid.engine.type}") final EngineType engineType) {
-        this.engineType = engineType;
+    @Autowired
+    public ParallelEnvOperationProviderService(final ParallelEnvProvider parallelEnvProvider) {
+        this.parallelEnvProvider = parallelEnvProvider;
     }
 
     /**
@@ -62,16 +55,17 @@ public class ParallelEnvOperationProviderService {
      * @see ParallelEnvFilter
      */
     public List<ParallelEnv> filterParallelEnvs(final ParallelEnvFilter parallelEnvFilter) {
-        return getConfigProvider().listParallelEnv(parallelEnvFilter);
+        return parallelEnvProvider.listParallelEnv(parallelEnvFilter);
     }
 
     /**
      * This method processes the request to provider and returns deleted PE.
+     *
      * @param parallelEnvName name of PE to be deleted
      * @return {@link ParallelEnv} that was deleted
      */
     public ParallelEnv deleteParallelEnv(final String parallelEnvName) {
-        return getConfigProvider().deleteParallelEnv(parallelEnvName);
+        return parallelEnvProvider.deleteParallelEnv(parallelEnvName);
     }
 
     /**
@@ -81,7 +75,7 @@ public class ParallelEnvOperationProviderService {
      * @return object of {@link ParallelEnv}
      */
     public ParallelEnv getParallelEnv(final String peName) {
-        return getConfigProvider().getParallelEnv(peName);
+        return parallelEnvProvider.getParallelEnv(peName);
     }
 
     /**
@@ -91,24 +85,7 @@ public class ParallelEnvOperationProviderService {
      * @return the registered {@link ParallelEnv}
      */
     public ParallelEnv registerParallelEnv(final PeRegistrationVO registrationRequest) {
-        return getConfigProvider().registerParallelEnv(registrationRequest);
+        return parallelEnvProvider.registerParallelEnv(registrationRequest);
     }
 
-    /**
-     * Injects all available {@link ParallelEnvProvider} implementations.
-     *
-     * @param providers list of ParallelEnvProvider.
-     * @see ParallelEnvProvider
-     */
-    @Autowired
-    public void setProviders(final List<ParallelEnvProvider> providers) {
-        this.providers = providers.stream()
-                .collect(Collectors.toMap(ParallelEnvProvider::getProviderType, Function.identity()));
-    }
-
-    private ParallelEnvProvider getConfigProvider() {
-        final ParallelEnvProvider parallelEnv = providers.get(engineType);
-        Assert.notNull(parallelEnv, String.format("Provides for type '%s' is not supported", engineType));
-        return parallelEnv;
-    }
 }
