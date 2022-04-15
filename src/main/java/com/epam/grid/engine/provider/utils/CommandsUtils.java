@@ -17,7 +17,7 @@
  *
  */
 
-package com.epam.grid.engine.provider.utils.sge.common;
+package com.epam.grid.engine.provider.utils;
 
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.exception.GridEngineException;
@@ -30,7 +30,7 @@ import java.util.List;
 import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class SgeCommandsUtils {
+public final class CommandsUtils {
 
     private static final String MUST_BE_MANAGER = "must be manager for this operation";
 

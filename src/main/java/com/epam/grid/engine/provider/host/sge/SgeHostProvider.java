@@ -29,11 +29,12 @@ import com.epam.grid.engine.entity.host.Host;
 import com.epam.grid.engine.entity.host.sge.SgeHostListing;
 import com.epam.grid.engine.mapper.host.sge.SgeHostMapper;
 import com.epam.grid.engine.provider.host.HostProvider;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.JaxbUtils;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
@@ -49,6 +50,7 @@ import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeHostProvider implements HostProvider {
 
     private static final String FILTER = "filter";
@@ -91,12 +93,12 @@ public class SgeHostProvider implements HostProvider {
         final String[] hostCommand = commandCompiler.compileCommand(getProviderType(), QHOST_COMMAND, context);
         final CommandResult commandResult = simpleCmdExecutor.execute(hostCommand);
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult);
+            CommandsUtils.throwExecutionDetails(commandResult);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }
         return mapToHosts(JaxbUtils.unmarshall(String.join(NEW_LINE_DELIMITER,
-                commandResult.getStdOut()),
+                        commandResult.getStdOut()),
                 SgeHostListing.class));
     }
 

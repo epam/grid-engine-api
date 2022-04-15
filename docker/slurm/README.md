@@ -13,7 +13,7 @@
    file, build docker image and finally run a container with application.
 6. After execution of composeUp task in the "Services" tab
    (row of tabs in the bottom line of IDEA window) in left down part of window you will find item "
-   Docker" and run it. Then choose Docker -> Docker-compose grid-engine-api -> worker -> worker. Click on
+   Docker" and run it. Then choose Docker -> Docker-compose grid-engine-api -> slurmctld -> slurmctld. Click on
    it, and you will see the sub-tab "Log" containing the log-output of running application. You need
    to find the line that contains "Listening for transport dt_socket at address: 5005". To the right
    of this line you will see the link "Attach debugger" (this link seems quite pale). Follow this

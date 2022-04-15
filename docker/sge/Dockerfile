@@ -13,9 +13,8 @@ COPY ./build/libs /opt
 EXPOSE 8080
 EXPOSE 5005
 WORKDIR /opt
-
 ENV PATH="/opt/sge/bin/lx-amd64:$PATH" \
     SGE_ROOT=/opt/sge
 
 CMD qconf -am sgeuser && \
-    runuser -l sgeuser -c "java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 /opt/grid-engine-api-1.0-SNAPSHOT.jar"
+    runuser -l sgeuser -c "export TARGET_GRID_ENGINE=${TARGET_GRID_ENGINE}; java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 /opt/grid-engine-api-1.0-SNAPSHOT.jar"
