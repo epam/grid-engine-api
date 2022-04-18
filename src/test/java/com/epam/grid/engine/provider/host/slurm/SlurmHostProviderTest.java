@@ -34,24 +34,24 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.util.Collections;
 import java.util.List;
 
-import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.*;
+import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_LIST;
 import static org.mockito.Mockito.doReturn;
 
 @SpringBootTest(properties = {"grid.engine.type=SLURM"})
 public class SlurmHostProviderTest {
 
-    final private static String WORKER1_OUT = "NodeName=worker1 Arch=x86_64 CoresPerSocket=1  CPUAlloc=0 CPUTot=1 " +
-            "CPULoad=0.01 AvailableFeatures=(null) ActiveFeatures=(null) Gres=(null) NodeAddr=worker1 " +
-            "NodeHostName=worker1  OS=Linux 5.10.16.3-microsoft-standard-WSL2 #1 SMP Fri Apr 2 22:23:49 UTC 2021  " +
-            "RealMemory=1000 AllocMem=0 FreeMem=9936 Sockets=1 Boards=1 State=IDLE ThreadsPerCore=1 TmpDisk=0 " +
-            "Weight=1 Owner=N/A MCS_label=N/A Partitions=normal  BootTime=2022-04-16T01:15:56 " +
-            "SlurmdStartTime=2022-04-17T19:53:28 CfgTRES=cpu=1,mem=1000M,billing=1 AllocTRES= CapWatts=n/a " +
-            "CurrentWatts=0 AveWatts=0 ExtSensorsJoules=n/s ExtSensorsWatts=0 ExtSensorsTemp=n/s";
+    private static final String WORKER1_OUT = "NodeName=worker1 Arch=x86_64 CoresPerSocket=1  CPUAlloc=0 CPUTot=1 "
+            + "CPULoad=0.01 AvailableFeatures=(null) ActiveFeatures=(null) Gres=(null) NodeAddr=worker1 "
+            + "NodeHostName=worker1  OS=Linux 5.10.16.3-microsoft-standard-WSL2 #1 SMP Fri Apr 2 22:23:49 UTC 2021  "
+            + "RealMemory=1000 AllocMem=0 FreeMem=9936 Sockets=1 Boards=1 State=IDLE ThreadsPerCore=1 TmpDisk=0 "
+            + "Weight=1 Owner=N/A MCS_label=N/A Partitions=normal  BootTime=2022-04-16T01:15:56 "
+            + "SlurmdStartTime=2022-04-17T19:53:28 CfgTRES=cpu=1,mem=1000M,billing=1 AllocTRES= CapWatts=n/a "
+            + "CurrentWatts=0 AveWatts=0 ExtSensorsJoules=n/s ExtSensorsWatts=0 ExtSensorsTemp=n/s";
 
-    final private static String NOT_FOUND = "Node nodeName not found";
-    final private static String NOT_FOUND_NEW_LINE = "Node nodeName not found\n";
+    private static final String NOT_FOUND = "Node nodeName not found";
+    private static final String NOT_FOUND_NEW_LINE = "Node nodeName not found\n";
 
-    final private static String[] SCONTROL_COMMAND = {"scontrol", "-o", "show", "node"};
+    private static final String[] SCONTROL_COMMAND = {"scontrol", "-o", "show", "node"};
 
     @MockBean
     private SimpleCmdExecutor mockCmdExecutor;
