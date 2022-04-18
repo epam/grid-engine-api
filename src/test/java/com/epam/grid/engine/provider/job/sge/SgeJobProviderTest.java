@@ -67,7 +67,7 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SUSPENDED
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.TYPE_XML;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class SgeJobProviderTest {
 
     private static final String QSTAT_COMMAND = "qstat";

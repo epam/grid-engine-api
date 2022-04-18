@@ -36,7 +36,7 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_LIS
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SINGLETON_LIST_WITH_STANDARD_WARN;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class SgeUsageProviderTest {
 
     private static final String QACCT_COMMAND = "qacct";
