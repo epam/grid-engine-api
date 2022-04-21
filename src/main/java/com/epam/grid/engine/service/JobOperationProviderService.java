@@ -29,7 +29,6 @@ import com.epam.grid.engine.entity.job.JobOptions;
 import com.epam.grid.engine.provider.job.JobProvider;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -57,7 +56,7 @@ public class JobOperationProviderService {
      *                    occurred when processing the job
      * @see JobProvider
      */
-    @Autowired
+
     public JobOperationProviderService(final JobProvider jobProvider, @Value("${job.log.dir}") final String logDir) {
         this.jobProvider = jobProvider;
         this.logDir = logDir;

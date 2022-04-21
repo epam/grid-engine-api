@@ -24,7 +24,7 @@ import com.epam.grid.engine.entity.QueueFilter;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.QueueVO;
 import com.epam.grid.engine.provider.queue.QueueProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,20 +34,10 @@ import java.util.List;
  * QueueProvider type.
  */
 @Service
+@RequiredArgsConstructor
 public class QueueOperationProviderService {
 
     private final QueueProvider queueProvider;
-
-    /**
-     * Constructor, sets created queueProvider bean to the class field.
-     *
-     * @param queueProvider created QueueProvider
-     * @see QueueProvider
-     */
-    @Autowired
-    public QueueOperationProviderService(final QueueProvider queueProvider) {
-        this.queueProvider = queueProvider;
-    }
 
     /**
      * Returns a List of existing Queues with their names.

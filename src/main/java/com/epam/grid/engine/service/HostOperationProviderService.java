@@ -23,27 +23,17 @@ import com.epam.grid.engine.entity.HostFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.host.Host;
 import com.epam.grid.engine.provider.host.HostProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
  * This class determines which of the grid engines shall be used and calls appropriate methods.
  */
 @Service
+@RequiredArgsConstructor
 public class HostOperationProviderService {
 
     private final HostProvider hostProvider;
-
-    /**
-     * Constructor, sets created hostProvider bean to the class field.
-     *
-     * @param hostProvider created HostGroupProvider
-     * @see HostProvider
-     */
-    @Autowired
-    public HostOperationProviderService(final HostProvider hostProvider) {
-        this.hostProvider = hostProvider;
-    }
 
     /**
      * This method processes the request to provider and returns listing of hosts,
