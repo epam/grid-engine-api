@@ -76,7 +76,7 @@ public class SlurmHostProvider implements HostProvider {
         }
 
         final List<String> stdOut = commandResult.getStdOut().stream()
-                .filter(ScontrolShowNodeParser::checkStdoutLine)
+                .filter(ScontrolShowNodeParser::checkStdOutLine)
                 .collect(Collectors.toList());
 
         if (stdOut.isEmpty()) {
