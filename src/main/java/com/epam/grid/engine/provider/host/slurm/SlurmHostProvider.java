@@ -56,7 +56,6 @@ public class SlurmHostProvider implements HostProvider {
 
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final GridEngineCommandCompiler commandCompiler;
-    private final ScontrolShowNodeParser slurmHostParser;
     private final SlurmHostMapper slurmHostMapper;
 
     @Override
@@ -75,8 +74,17 @@ public class SlurmHostProvider implements HostProvider {
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }
+
+        final List<String> stdOut = commandResult.getStdOut().stream()
+                .filter(ScontrolShowNodeParser::validateStdout)
+                .collect(Collectors.toList());
+
+        if (stdOut.isEmpty()) {
+            CommandsUtils.throwExecutionDetails(commandResult);
+        }
+
         return mapToHosts(commandResult.getStdOut().stream()
-                .map(slurmHostParser::mapHostDataToSlurmHost)
+                .map(ScontrolShowNodeParser::mapHostDataToSlurmHost)
                 .collect(Collectors.toList()));
     }
 

@@ -48,6 +48,14 @@ public class SlurmHostProviderTest {
             + "SlurmdStartTime=2022-04-17T19:53:28 CfgTRES=cpu=1,mem=1000M,billing=1 AllocTRES= CapWatts=n/a "
             + "CurrentWatts=0 AveWatts=0 ExtSensorsJoules=n/s ExtSensorsWatts=0 ExtSensorsTemp=n/s";
 
+    private static final String EMPTY_OUT = "NodeName= Arch= CoresPerSocket=  CPUAlloc= CPUTot= "
+            + "CPULoad=0.01 AvailableFeatures=(null) ActiveFeatures=(null) Gres=(null) NodeAddr= "
+            + "NodeHostName=  OS= "
+            + "RealMemory= AllocMem= FreeMem= Sockets= Boards= State= ThreadsPerCore= TmpDisk= "
+            + "Weight= Owner= MCS_label= Partitions=  BootTime= "
+            + "SlurmdStartTime= CfgTRES=cpu=,mem=,billing= AllocTRES= CapWatts= "
+            + "CurrentWatts= AveWatts= ExtSensorsJoules= ExtSensorsWatts= ExtSensorsTemp=";
+
     private static final String NOT_FOUND = "Node nodeName not found";
     private static final String NOT_FOUND_NEW_LINE = "Node nodeName not found\n";
 
@@ -85,7 +93,6 @@ public class SlurmHostProviderTest {
 
     @Test
     public void shouldReturnEmptyAnswer() {
-
         final CommandResult commandResult = CommandResult.builder()
                 .stdOut(EMPTY_LIST)
                 .stdErr(EMPTY_LIST)
@@ -111,6 +118,21 @@ public class SlurmHostProviderTest {
         final GridEngineException gridEngineException = Assertions.assertThrows(GridEngineException.class,
                 () -> slurmHostProvider.listHosts(hostFilter));
         Assertions.assertEquals(NOT_FOUND_NEW_LINE, gridEngineException.getMessage());
+    }
+
+    @Test
+    public void shouldReturnNotFoundFromEmptyOutput() {
+        final List<String> worker1List = Collections.singletonList(EMPTY_OUT);
+        final HostFilter hostFilter = new HostFilter();
+        final CommandResult commandResult = CommandResult.builder()
+                .stdOut(worker1List)
+                .stdErr(EMPTY_LIST)
+                .exitCode(0)
+                .build();
+        doReturn(commandResult).when(mockCmdExecutor).execute(SCONTROL_COMMAND);
+        final GridEngineException gridEngineException = Assertions.assertThrows(GridEngineException.class,
+                () -> slurmHostProvider.listHosts(hostFilter));
+        Assertions.assertNotNull(gridEngineException.getMessage());
     }
 
 }

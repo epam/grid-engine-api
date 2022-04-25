@@ -21,12 +21,17 @@ package com.epam.grid.engine.provider.utils.slurm.host;
 
 import com.epam.grid.engine.entity.host.slurm.SlurmHost;
 import com.epam.grid.engine.exception.GridEngineException;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.epam.grid.engine.utils.TextConstants.SPACE;
+import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
 
 /**
  * This class parses the result of SLURM
@@ -34,7 +39,7 @@ import java.util.stream.Collectors;
  *
  * @see com.epam.grid.engine.entity.host.slurm.SlurmHost
  */
-@Component
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ScontrolShowNodeParser {
 
     private static final String NODE_NAME = "NodeName";
@@ -48,10 +53,12 @@ public class ScontrolShowNodeParser {
     private static final String SPACE_DELIMITER = " ";
     private static final String EQUALITY_DELIMITER = "=";
     private static final String CANT_PARSE_STDOUT_TO_SLURM_HOST = "Can't parse command result to SlurmHost";
+    private static final String DOUBLED_SPACES_REGEX = "\\s+";
 
-    public SlurmHost mapHostDataToSlurmHost(final String hostData) {
+    public static SlurmHost mapHostDataToSlurmHost(final String hostData) {
         try {
             final Map<String, String> results = convertHostDataIntoMap(hostData);
+
             return SlurmHost.builder()
                     .nodeName(results.get(NODE_NAME))
                     .arch(results.get(ARCHITECTURE))
@@ -68,7 +75,20 @@ public class ScontrolShowNodeParser {
         }
     }
 
-    private Map<String, String> convertHostDataIntoMap(final String hostData) {
+    public static boolean validateStdout(String stdOut) {
+        final String hostData = stdOut.replaceAll(DOUBLED_SPACES_REGEX, SPACE);
+        final Optional<String> nodeStringOptional = Arrays.stream(hostData.split(SPACE))
+                .filter(s -> s.contains(NODE_NAME))
+                .findFirst();
+        if (nodeStringOptional.isPresent()) {
+            final String[] nodeString = nodeStringOptional.get().split(EQUALITY_DELIMITER);
+            return nodeString.length > 1 && !nodeString[1].equals(EMPTY_STRING)
+                    && !nodeString[1].equalsIgnoreCase("(null)");
+        }
+        return false;
+    }
+
+    private static Map<String, String> convertHostDataIntoMap(final String hostData) {
         return Arrays.stream(hostData.trim().split(SPACE_DELIMITER))
                 .filter(string -> string.contains(EQUALITY_DELIMITER))
                 .map(string -> string.split(EQUALITY_DELIMITER, 2))
