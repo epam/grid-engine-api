@@ -75,7 +75,7 @@ public class ScontrolShowNodeParser {
         }
     }
 
-    public static boolean checkStdOutLine(String stdOut) {
+    public static boolean checkStdOutLine(final String stdOut) {
         final String hostData = stdOut.replaceAll(DOUBLED_SPACES_REGEX, SPACE);
         final Optional<String> nodeStringOptional = Arrays.stream(hostData.split(SPACE))
                 .filter(s -> s.contains(NODE_NAME))
