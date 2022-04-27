@@ -57,7 +57,6 @@ public class SlurmHostProviderTest {
             + "CurrentWatts= AveWatts= ExtSensorsJoules= ExtSensorsWatts= ExtSensorsTemp=";
 
     private static final String NOT_FOUND = "Node nodeName not found";
-    private static final String NOT_FOUND_NEW_LINE = "Node nodeName not found\n";
 
     private static final String[] SCONTROL_COMMAND = {"scontrol", "-o", "show", "node"};
 
@@ -117,7 +116,7 @@ public class SlurmHostProviderTest {
         doReturn(commandResult).when(mockCmdExecutor).execute(SCONTROL_COMMAND);
         final GridEngineException gridEngineException = Assertions.assertThrows(GridEngineException.class,
                 () -> slurmHostProvider.listHosts(hostFilter));
-        Assertions.assertEquals(NOT_FOUND_NEW_LINE, gridEngineException.getMessage());
+        Assertions.assertEquals(NOT_FOUND, gridEngineException.getMessage());
     }
 
     @Test
