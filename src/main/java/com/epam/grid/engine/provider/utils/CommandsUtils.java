@@ -36,12 +36,12 @@ public final class CommandsUtils {
     private static final String MUST_BE_MANAGER = "must be manager for this operation";
 
     public static void throwExecutionDetails(final CommandResult result, final HttpStatus httpStatus) {
-        final String message = result.getStdOut().isEmpty() ? mergeOutputLines(result.getStdErr()) :
-                mergeOutputLines(result.getStdOut())
-                        + (result.getStdErr().isEmpty()
-                        ?
-                        EMPTY_STRING :
-                        NEW_LINE_DELIMITER + mergeOutputLines(result.getStdErr()));
+        final String message = result.getStdOut().isEmpty()
+                ? mergeOutputLines(result.getStdErr())
+                : mergeOutputLines(result.getStdOut())
+                    + (result.getStdErr().isEmpty()
+                    ? EMPTY_STRING
+                    : NEW_LINE_DELIMITER + mergeOutputLines(result.getStdErr()));
         throw new GridEngineException(httpStatus, message);
     }
 
