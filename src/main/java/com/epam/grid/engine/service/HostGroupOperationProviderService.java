@@ -23,7 +23,7 @@ import com.epam.grid.engine.controller.hostgroup.HostGroupOperationController;
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,19 +33,10 @@ import java.util.List;
  * and calls the corresponding HostGroupProvider type.
  */
 @Service
+@RequiredArgsConstructor
 public class HostGroupOperationProviderService {
 
     private final HostGroupProvider hostGroupProvider;
-
-    /**
-     * Constructor, sets created hostGroupProvider bean to the class field.
-     * @param hostGroupProvider created HostGroupProvider
-     * @see HostGroupProvider
-     */
-    @Autowired
-    public HostGroupOperationProviderService(final HostGroupProvider hostGroupProvider) {
-        this.hostGroupProvider = hostGroupProvider;
-    }
 
     /**
      * Returns a List of {@link HostGroup}s according to {@link HostGroupFilter} parameter.

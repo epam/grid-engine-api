@@ -36,7 +36,7 @@ import java.util.List;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class QueueOperationProviderServiceTest {
 
     private static final String COMMAND_QCONF = "qconf";

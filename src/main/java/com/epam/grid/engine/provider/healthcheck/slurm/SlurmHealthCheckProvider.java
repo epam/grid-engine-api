@@ -25,6 +25,7 @@ import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
 import com.epam.grid.engine.provider.utils.slurm.healthcheck.ShowConfigCommandParser;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -34,6 +35,7 @@ import org.thymeleaf.context.Context;
  * to the SLURM Grid Engine and processes the response received.
  */
 @Service
+@RequiredArgsConstructor
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmHealthCheckProvider implements HealthCheckProvider {
 
@@ -41,14 +43,6 @@ public class SlurmHealthCheckProvider implements HealthCheckProvider {
 
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final GridEngineCommandCompiler commandCompiler;
-
-    public SlurmHealthCheckProvider(
-            final SimpleCmdExecutor simpleCmdExecutor,
-            final GridEngineCommandCompiler commandCompiler
-    ) {
-        this.simpleCmdExecutor = simpleCmdExecutor;
-        this.commandCompiler = commandCompiler;
-    }
 
     /**
      * This method tells which grid engine is used.

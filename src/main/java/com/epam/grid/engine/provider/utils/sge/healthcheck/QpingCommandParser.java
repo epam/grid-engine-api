@@ -37,7 +37,7 @@ import java.util.List;
 import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
 import static com.epam.grid.engine.utils.TextConstants.SPACE;
 
-import static com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils.mergeOutputLines;
+import static com.epam.grid.engine.provider.utils.CommandsUtils.mergeOutputLines;
 
 /**
  * Parser containing static methods for interacting

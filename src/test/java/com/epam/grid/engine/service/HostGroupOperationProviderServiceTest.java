@@ -35,7 +35,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class HostGroupOperationProviderServiceTest {
 
     private static final String HOST_GROUP_NAME = "@allhosts";

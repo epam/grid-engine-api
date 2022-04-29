@@ -22,7 +22,7 @@ package com.epam.grid.engine.service;
 import com.epam.grid.engine.entity.usage.UsageReport;
 import com.epam.grid.engine.entity.usage.UsageReportFilter;
 import com.epam.grid.engine.provider.usage.UsageProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,20 +30,10 @@ import org.springframework.stereotype.Service;
  * to the corresponding UsageProvider type.
  */
 @Service
+@RequiredArgsConstructor
 public class UsageOperationProviderService {
 
     private final UsageProvider usageProvider;
-
-    /**
-     * Constructor, sets created usageProvider bean to the class field.
-     *
-     * @param usageProvider created UsageProvider
-     * @see UsageProvider
-     */
-    @Autowired
-    public UsageOperationProviderService(final UsageProvider usageProvider) {
-        this.usageProvider = usageProvider;
-    }
 
     /**
      * Returns a report containing usage summary information received from the corresponding
