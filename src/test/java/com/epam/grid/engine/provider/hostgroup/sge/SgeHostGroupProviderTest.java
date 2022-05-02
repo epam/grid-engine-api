@@ -36,7 +36,7 @@ import java.util.List;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SINGLETON_LIST_WITH_STANDARD_WARN;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class SgeHostGroupProviderTest {
 
     private static final String QCONF_COMMAND = "qconf";
@@ -85,4 +85,3 @@ public class SgeHostGroupProviderTest {
                 () -> sgeHostGroupProvider.getHostGroup(WRONG_HOST_GROUP_NAME));
     }
 }
-

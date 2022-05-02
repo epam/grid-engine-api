@@ -22,7 +22,7 @@ package com.epam.grid.engine.service;
 import com.epam.grid.engine.entity.healthcheck.GridEngineStatus;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.entity.healthcheck.StatusInfo;
-import com.epam.grid.engine.provider.healthcheck.sge.SgeHealthCheckProvider;
+import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,16 +35,15 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class HealthCheckProviderServiceTest {
 
     private static final String SOME_INFO = "SomeInfo";
 
     @Autowired
     private HealthCheckProviderService healthCheckProviderService;
-
     @SpyBean
-    private SgeHealthCheckProvider sgeHealthCheckProvider;
+    private HealthCheckProvider healthCheckProvider;
 
     @Test
     public void shouldReturnCorrectHealthCheckInfo() {
@@ -59,8 +58,8 @@ public class HealthCheckProviderServiceTest {
                 .checkTime(LocalDateTime.now())
                 .build();
 
-        doReturn(expectedHealthCheckInfo).when(sgeHealthCheckProvider).checkHealth();
+        doReturn(expectedHealthCheckInfo).when(healthCheckProvider).checkHealth();
         Assertions.assertEquals(expectedHealthCheckInfo, healthCheckProviderService.checkHealth());
-        verify(sgeHealthCheckProvider, times(1)).checkHealth();
+        verify(healthCheckProvider, times(1)).checkHealth();
     }
 }

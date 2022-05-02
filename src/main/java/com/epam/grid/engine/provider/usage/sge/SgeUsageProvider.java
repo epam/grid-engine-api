@@ -29,7 +29,7 @@ import com.epam.grid.engine.provider.usage.UsageProvider;
 import com.epam.grid.engine.provider.utils.sge.usage.SgeAccountingDataParser;
 import com.epam.grid.engine.provider.utils.sge.usage.SgeJobAccountingDataParser;
 import com.epam.grid.engine.provider.utils.sge.usage.SgeSummaryAccountingDataParser;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.sge.usage.SgeSummaryFilteredAccountingDataParser;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,7 +90,7 @@ public class SgeUsageProvider implements UsageProvider {
                 getProviderType(), QACCT_COMMAND, context));
 
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult);
+            CommandsUtils.throwExecutionDetails(commandResult);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn("Standard error while sge qacct command was executed: {}", commandResult.getStdErr());
         }

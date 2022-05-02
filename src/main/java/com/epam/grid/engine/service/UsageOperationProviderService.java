@@ -19,40 +19,21 @@
 
 package com.epam.grid.engine.service;
 
-import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.usage.UsageReport;
 import com.epam.grid.engine.entity.usage.UsageReportFilter;
 import com.epam.grid.engine.provider.usage.UsageProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
-
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * The class which redirects the call from the {@link com.epam.grid.engine.controller.usage.UsageOperationController}
  * to the corresponding UsageProvider type.
  */
 @Service
+@RequiredArgsConstructor
 public class UsageOperationProviderService {
 
-    private final EngineType engineType;
-
-    private Map<EngineType, UsageProvider> providers;
-
-    public UsageOperationProviderService(@Value("${grid.engine.type}") final EngineType engineType) {
-        this.engineType = engineType;
-    }
-
-    @Autowired
-    public void setProviders(final List<UsageProvider> providers) {
-        this.providers = providers.stream()
-                .collect(Collectors.toMap(UsageProvider::getProviderType, Function.identity()));
-    }
+    private final UsageProvider usageProvider;
 
     /**
      * Returns a report containing usage summary information received from the corresponding
@@ -62,13 +43,7 @@ public class UsageOperationProviderService {
      * @return the usage report.
      */
     public UsageReport getUsageReport(final UsageReportFilter filter) {
-        return getUsageProvider().getUsageReport(filter);
-    }
-
-    private UsageProvider getUsageProvider() {
-        final UsageProvider usageProvider = providers.get(engineType);
-        Assert.notNull(usageProvider, String.format("Provides for type '%s' is not supported", engineType));
-        return usageProvider;
+        return usageProvider.getUsageReport(filter);
     }
 
 }

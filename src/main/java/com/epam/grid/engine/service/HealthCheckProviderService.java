@@ -19,63 +19,29 @@
 
 package com.epam.grid.engine.service;
 
-import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
-
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Provider determines which of the grid engines shall be used
  * and calls appropriate methods.
  */
 @Service
+@RequiredArgsConstructor
 public class HealthCheckProviderService {
 
-    private final EngineType engineType;
-
-    private Map<EngineType, HealthCheckProvider> providers;
-
-    /**
-     * This method sets grid engine type in the context.
-     * @param engineType type of grid engine
-     * @see EngineType
-     */
-    public HealthCheckProviderService(@Value("${grid.engine.type}") final EngineType engineType) {
-        this.engineType = engineType;
-    }
+    private final HealthCheckProvider healthCheckProvider;
 
     /**
      * This method passes the request on to {@link HealthCheckProvider}
      * and returns working grid engine status information.
+     *
      * @return {@link HealthCheckInfo}
      */
     public HealthCheckInfo checkHealth() {
-        return getProvider().checkHealth();
+        return healthCheckProvider.checkHealth();
     }
 
-    /**
-     * This method injects all created {@link HealthCheckProvider} beans.
-     * @param providers list of existing HealthCheckProviders
-     * @see HealthCheckProvider
-     */
-    @Autowired
-    public void setProviders(final List<HealthCheckProvider> providers) {
-        this.providers = providers.stream()
-                .collect(Collectors.toMap(HealthCheckProvider::getProviderType, Function.identity()));
-    }
-
-    private HealthCheckProvider getProvider() {
-        final HealthCheckProvider healthCheckProvider = providers.get(engineType);
-        Assert.notNull(healthCheckProvider, String.format("Provides for type '%s' is not "
-                + "supported", engineType));
-        return healthCheckProvider;
-    }
 }

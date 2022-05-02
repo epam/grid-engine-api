@@ -42,7 +42,7 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_STR
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class SgeHealthCheckProviderTest {
 
     private static final String SOME_HOST = "someHost";

@@ -17,7 +17,7 @@
  *
  */
 
-package com.epam.grid.engine.provider.host.sge;
+package com.epam.grid.engine.provider.host.slurm;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
@@ -26,88 +26,73 @@ import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.HostFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.host.Host;
-import com.epam.grid.engine.entity.host.sge.SgeHostListing;
-import com.epam.grid.engine.mapper.host.sge.SgeHostMapper;
+import com.epam.grid.engine.entity.host.slurm.SlurmHost;
+import com.epam.grid.engine.mapper.host.slurm.SlurmHostMapper;
 import com.epam.grid.engine.provider.host.HostProvider;
 import com.epam.grid.engine.provider.utils.CommandsUtils;
-import com.epam.grid.engine.provider.utils.JaxbUtils;
+import com.epam.grid.engine.provider.utils.slurm.host.ScontrolShowNodeParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
-
 /**
- * This is the implementation of the host provider for Sun Grid Engine.
+ * This is the implementation of the host provider for SLURM.
  *
- * @see HostProvider
+ * @see com.epam.grid.engine.provider.host.HostProvider
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
-public class SgeHostProvider implements HostProvider {
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
+public class SlurmHostProvider implements HostProvider {
 
     private static final String FILTER = "filter";
-    private static final String GLOBAL = "global";
-    private static final String QHOST_COMMAND = "qhost";
+    private static final String SCONTROL_COMMAND = "scontrol";
 
-    private final SgeHostMapper sgeHostMapper;
-
-    /**
-     * The executor that provide the ability to call any command available in the current environment.
-     */
     private final SimpleCmdExecutor simpleCmdExecutor;
-
-    /**
-     * An object that forms the structure of an executable command according to a template.
-     */
     private final GridEngineCommandCompiler commandCompiler;
+    private final SlurmHostMapper slurmHostMapper;
 
-    /**
-     * This method tells what grid engine is used.
-     *
-     * @return Type of grid engine
-     * @see EngineType
-     */
     @Override
     public EngineType getProviderType() {
-        return EngineType.SGE;
+        return EngineType.SLURM;
     }
 
-    /**
-     * Lists active hosts available in SGE according to limitations from {@link HostFilter}.
-     *
-     * @param hostFilter names of hosts needed
-     * @return {@link Listing} of {@link Host}
-     */
     @Override
     public Listing<Host> listHosts(final HostFilter hostFilter) {
         final Context context = new Context();
         context.setVariable(FILTER, hostFilter);
-        final String[] hostCommand = commandCompiler.compileCommand(getProviderType(), QHOST_COMMAND, context);
+        final String[] hostCommand = commandCompiler.compileCommand(getProviderType(), SCONTROL_COMMAND, context);
         final CommandResult commandResult = simpleCmdExecutor.execute(hostCommand);
         if (commandResult.getExitCode() != 0) {
             CommandsUtils.throwExecutionDetails(commandResult);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }
-        return mapToHosts(JaxbUtils.unmarshall(String.join(NEW_LINE_DELIMITER,
-                        commandResult.getStdOut()),
-                SgeHostListing.class));
+
+        final List<String> stdOut = commandResult.getStdOut().stream()
+                .filter(ScontrolShowNodeParser::checkStdOutLine)
+                .collect(Collectors.toList());
+
+        if (stdOut.isEmpty()) {
+            CommandsUtils.throwExecutionDetails(commandResult);
+        }
+
+        return mapToHosts(commandResult.getStdOut().stream()
+                .map(ScontrolShowNodeParser::mapHostDataToSlurmHost)
+                .collect(Collectors.toList()));
     }
 
-    private Listing<Host> mapToHosts(final SgeHostListing sgeHostListing) {
-        return new Listing<>(CollectionUtils.emptyIfNull(sgeHostListing.getSgeHost())
-                .stream()
-                .map(sgeHostMapper::mapToHost)
-                .filter(host -> !host.getHostname().equals(GLOBAL))
-                .collect(Collectors.toList())
+    private Listing<Host> mapToHosts(final List<SlurmHost> hostList) {
+        return new Listing<>(
+                hostList.stream()
+                        .map(slurmHostMapper::mapToHost)
+                        .collect(Collectors.toList())
         );
     }
 }

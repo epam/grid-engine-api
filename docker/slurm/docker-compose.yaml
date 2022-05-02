@@ -40,6 +40,8 @@ services:
       dockerfile: ./docker/slurm/Dockerfile.service
     command: [ "slurmctld" ]
     container_name: slurmctld
+    environment:
+      TARGET_GRID_ENGINE: SLURM
     hostname: slurmctld
     volumes:
       - etc_munge:/etc/munge
@@ -56,11 +58,26 @@ services:
     depends_on:
       - "slurmdbd"
 
-  worker:
+  worker1:
     image: grid-engine-api-slurm-base
     command: [ "slurmd" ]
-    hostname: worker
-    container_name: worker
+    hostname: worker1
+    container_name: worker1
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - slurm_jobdir:/data
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6818"
+    depends_on:
+      - "slurmctld"
+
+  worker2:
+    image: grid-engine-api-slurm-base
+    command: [ "slurmd" ]
+    hostname: worker2
+    container_name: worker2
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm

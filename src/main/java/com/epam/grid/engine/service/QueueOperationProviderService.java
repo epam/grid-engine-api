@@ -20,51 +20,42 @@
 package com.epam.grid.engine.service;
 
 import com.epam.grid.engine.controller.queue.QueueOperationController;
-import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.QueueFilter;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.QueueVO;
 import com.epam.grid.engine.provider.queue.QueueProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * The class which processes the information received from {@link QueueOperationController} and calls the corresponding
  * QueueProvider type.
  */
 @Service
+@RequiredArgsConstructor
 public class QueueOperationProviderService {
 
-    private final EngineType engineType;
-
-    private Map<EngineType, QueueProvider> providers;
-
-    public QueueOperationProviderService(@Value("${grid.engine.type}") final EngineType engineType) {
-        this.engineType = engineType;
-    }
+    private final QueueProvider queueProvider;
 
     /**
      * Returns a List of existing Queues with their names.
+     *
      * @return a List of existing Queues with their names
      */
     public List<Queue> listQueues() {
-        return getQueueProvider().listQueues();
+        return queueProvider.listQueues();
     }
 
     /**
      * Returns a List of Queues according to {@link QueueFilter} parameter.
+     *
      * @param queueFilter a provided filter
      * @return a List of Queues according to queueFilter parameter
      */
     public List<Queue> listQueues(final QueueFilter queueFilter) {
-        return getQueueProvider().listQueues(queueFilter);
+        return queueProvider.listQueues(queueFilter);
     }
 
     /**
@@ -74,7 +65,7 @@ public class QueueOperationProviderService {
      * @return Queue object which was deleted.
      */
     public Queue deleteQueue(final String queueName) {
-        return getQueueProvider().deleteQueues(queueName);
+        return queueProvider.deleteQueues(queueName);
     }
 
     /**
@@ -84,8 +75,9 @@ public class QueueOperationProviderService {
      * @return the registered {@code queue}
      */
     public Queue registerQueue(final QueueVO registrationRequest) {
-        return getQueueProvider().registerQueue(registrationRequest);
+        return queueProvider.registerQueue(registrationRequest);
     }
+
 
     /**
      * Updates a {@code queue} with specified properties in preassigned grid engine system.
@@ -94,18 +86,7 @@ public class QueueOperationProviderService {
      * @return the updated {@code queue}
      */
     public Queue updateQueue(final QueueVO updateRequest) {
-        return getQueueProvider().updateQueue(updateRequest);
+        return queueProvider.updateQueue(updateRequest);
     }
 
-    @Autowired
-    public void setProviders(final List<QueueProvider> providers) {
-        this.providers = providers.stream()
-                .collect(Collectors.toMap(QueueProvider::getProviderType, Function.identity()));
-    }
-
-    private QueueProvider getQueueProvider() {
-        final QueueProvider queueProvider = providers.get(engineType);
-        Assert.notNull(queueProvider, String.format("Provides for type '%s' is not supported", engineType));
-        return queueProvider;
-    }
 }

@@ -19,7 +19,6 @@
 
 package com.epam.grid.engine.service;
 
-import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.JobFilter;
 import com.epam.grid.engine.entity.job.DeleteJobFilter;
 import com.epam.grid.engine.entity.job.DeletedJobInfo;
@@ -30,19 +29,13 @@ import com.epam.grid.engine.entity.job.JobOptions;
 import com.epam.grid.engine.provider.job.JobProvider;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This class defines operations for processing information from the user
@@ -53,24 +46,20 @@ import java.util.stream.Collectors;
 public class JobOperationProviderService {
 
     private final String logDir;
-    private final EngineType engineType;
+    private final JobProvider jobProvider;
 
     /**
-     * Collection of providers by engine type.
-     */
-    private Map<EngineType, JobProvider> providers;
-
-    /**
-     * Constructor, sets the specified type of the executed engine and the path to job log.
+     * Constructor, sets created jobProvider bean to the class field and the path to job log.
      *
-     * @param logDir     the path to the directory where all log files will be stored
-     *                   occurred when processing the job
-     * @param engineType an engine for working with jobs
+     * @param jobProvider created JobProvider
+     * @param logDir      the path to the directory where all log files will be stored
+     *                    occurred when processing the job
+     * @see JobProvider
      */
-    public JobOperationProviderService(@Value("${job.log.dir}") final String logDir,
-                                       @Value("${grid.engine.type}") final EngineType engineType) {
+
+    public JobOperationProviderService(final JobProvider jobProvider, @Value("${job.log.dir}") final String logDir) {
+        this.jobProvider = jobProvider;
         this.logDir = logDir;
-        this.engineType = engineType;
     }
 
     /**
@@ -80,7 +69,7 @@ public class JobOperationProviderService {
      * @return list of jobs.
      */
     public Listing<Job> filter(final JobFilter jobFilter) {
-        return getJobProvider().filterJobs(jobFilter);
+        return jobProvider.filterJobs(jobFilter);
     }
 
     /**
@@ -90,7 +79,7 @@ public class JobOperationProviderService {
      * @return Information about deleted job.
      */
     public DeletedJobInfo deleteJob(final DeleteJobFilter deleteJobFilter) {
-        return getJobProvider().deleteJob(deleteJobFilter);
+        return jobProvider.deleteJob(deleteJobFilter);
     }
 
     /**
@@ -100,7 +89,7 @@ public class JobOperationProviderService {
      * @return Running job.
      */
     public Job runJob(final JobOptions options) {
-        return getJobProvider().runJob(options);
+        return jobProvider.runJob(options);
     }
 
     /**
@@ -115,7 +104,7 @@ public class JobOperationProviderService {
      */
     public JobLogInfo getJobLogInfo(final int jobId, final JobLogInfo.Type logType,
                                     final int lines, final boolean fromHead) {
-        return getJobProvider().getJobLogInfo(jobId, logType, lines, fromHead);
+        return jobProvider.getJobLogInfo(jobId, logType, lines, fromHead);
     }
 
     /**
@@ -127,7 +116,7 @@ public class JobOperationProviderService {
      * @return The job log file like a stream.
      */
     public InputStream getJobLogFile(final int jobId, final JobLogInfo.Type logType) {
-        return getJobProvider().getJobLogFile(jobId, logType);
+        return jobProvider.getJobLogFile(jobId, logType);
     }
 
     /**
@@ -145,20 +134,4 @@ public class JobOperationProviderService {
         }
     }
 
-    /**
-     * Creates a map of suppliers by engine type.
-     *
-     * @param providers List of providers.
-     */
-    @Autowired
-    public void setProviders(final List<JobProvider> providers) {
-        this.providers = providers.stream()
-                .collect(Collectors.toMap(JobProvider::getProviderType, Function.identity()));
-    }
-
-    private JobProvider getJobProvider() {
-        final JobProvider jobProvider = providers.get(engineType);
-        Assert.notNull(jobProvider, String.format("Provides for type '%s' is not supported", engineType));
-        return jobProvider;
-    }
 }

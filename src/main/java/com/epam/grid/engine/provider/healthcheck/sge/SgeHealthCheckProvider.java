@@ -27,6 +27,7 @@ import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
 import com.epam.grid.engine.provider.utils.sge.healthcheck.QpingCommandParser;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
@@ -35,6 +36,7 @@ import org.thymeleaf.context.Context;
  * to the Sun Grid Engine and processes the response received.
  */
 @Service
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeHealthCheckProvider implements HealthCheckProvider {
 
     private static final String QPING_COMMAND = "qping";
