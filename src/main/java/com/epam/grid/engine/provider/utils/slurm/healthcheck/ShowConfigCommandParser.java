@@ -24,6 +24,7 @@ import com.epam.grid.engine.entity.healthcheck.GridEngineStatus;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.entity.healthcheck.StatusInfo;
 import com.epam.grid.engine.exception.GridEngineException;
+import com.epam.grid.engine.provider.utils.slurm.DateUtils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -31,7 +32,6 @@ import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import static com.epam.grid.engine.utils.TextConstants.SPACE;
@@ -43,7 +43,6 @@ public class ShowConfigCommandParser {
 
     private static final String UP_STATE = "UP";
     private static final String DOWN_STATE = "DOWN";
-
     private static final String SLURM_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final String BOOT_TIME = "BOOT_TIME";
     private static final String CONFIGURATION_STRING = "Configuration data as of";
@@ -120,7 +119,8 @@ public class ShowConfigCommandParser {
                 .map(start -> start.replaceAll(SPACES_REGEX, SPACE))
                 .map(start -> start.replace(CONFIGURATION_STRING, EMPTY_STRING))
                 .map(String::trim)
-                .map(start -> tryParseStringToLocalDateTime(start, DateTimeFormatter.ofPattern(SLURM_DATE_FORMAT)))
+                .map(start -> DateUtils.tryParseStringToLocalDateTime(start,
+                        DateTimeFormatter.ofPattern(SLURM_DATE_FORMAT)))
                 .orElseThrow(() -> new GridEngineException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "check time wasn't found in stdOut, stdOut: " + stdOut));
     }
@@ -129,19 +129,11 @@ public class ShowConfigCommandParser {
         return stdOut.stream().filter(out -> out.contains(BOOT_TIME)).findAny()
                 .map(bootTimeStr -> bootTimeStr.split(EQUAL_SIGN))
                 .map(splitStr -> splitStr.length == 2 ? splitStr[1].trim() : "")
-                .map(start -> tryParseStringToLocalDateTime(start, DateTimeFormatter.ofPattern(SLURM_DATE_FORMAT)))
+                .map(start -> DateUtils.tryParseStringToLocalDateTime(start,
+                        DateTimeFormatter.ofPattern(SLURM_DATE_FORMAT)))
                 .orElseThrow(() -> new GridEngineException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "boot time wasn't found in stdOut, stdOut: " + stdOut));
     }
 
-    private static LocalDateTime tryParseStringToLocalDateTime(final String dateString,
-                                                               final DateTimeFormatter formatter) {
-        try {
-            return LocalDateTime.parse(dateString, formatter);
-        } catch (final DateTimeParseException dateTimeParseException) {
-            throw new GridEngineException(HttpStatus.INTERNAL_SERVER_ERROR, "Error during date parsing",
-                    dateTimeParseException);
-        }
-    }
 
 }
