@@ -40,7 +40,6 @@ import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ShowConfigCommandParser {
-
     private static final String UP_STATE = "UP";
     private static final String DOWN_STATE = "DOWN";
     private static final String SLURM_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
