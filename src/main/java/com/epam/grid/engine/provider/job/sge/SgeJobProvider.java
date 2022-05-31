@@ -44,6 +44,7 @@ import com.epam.grid.engine.provider.utils.CommandsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -79,6 +80,7 @@ import static com.epam.grid.engine.utils.TextConstants.SPACE;
  */
 @Service
 @Slf4j
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeJobProvider implements JobProvider {
 
     private static final String GET_LOG_LINES_COMMAND = "get_log_lines";
