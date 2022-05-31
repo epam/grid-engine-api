@@ -137,7 +137,7 @@ public class JobOperationController extends AbstractRestController {
     }
 
     /**
-     * Returns an requested job log lines and information about job log file.
+     * Returns a requested job log lines and information about job log file.
      *
      * @param jobId    The job identifier.
      * @param logType  The log file type to obtain information from.

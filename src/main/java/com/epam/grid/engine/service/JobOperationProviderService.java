@@ -93,7 +93,7 @@ public class JobOperationProviderService {
     }
 
     /**
-     * This method passes the request into {@link JobProvider} and returns an information
+     * This method passes the request into {@link JobProvider} and returns information
      * about the job log file and a list of required log lines.
      *
      * @param jobId    The job identifier.

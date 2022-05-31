@@ -17,83 +17,82 @@
  *
  */
 
-package com.epam.grid.engine.mapper.job.sge;
+package com.epam.grid.engine.mapper.job.slurm;
 
 import com.epam.grid.engine.entity.job.Job;
 import com.epam.grid.engine.entity.job.JobState;
-import com.epam.grid.engine.entity.job.sge.SgeJob;
+import com.epam.grid.engine.entity.job.slurm.SlurmJob;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * This interface consists of the configuration of a mapper for implementation by the MapStruct processor
- * for creation a {@link Job} object out of a {@link SgeJob} object.
+ * for creation a {@link Job} object out of a {@link SlurmJob} object.
  * To get more information about grid engine job status values see <a href="https://manpages.debian.org/testing/gridengine-common/sge_status.5.en.html">
  * Grid Engine job status values</a>.
  */
 @Mapper(componentModel = "spring")
-@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
-public interface SgeJobMapper {
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
+public interface SlurmJobMapper {
+
+    String FINISHED_STATUS_CODE = "COMPLETED";
+    Set<String> PENDING_STATUS_CODE_LIST = Set.of("CONFIGURING", "PENDING", "REQUEUE_FED", "REQUEUE_HOLD", "REQUEUED");
+    Set<String> RUNNING_STATUS_CODE_LIST = Set.of("COMPLETING", "RUNNING", "RESIZING", "SIGNALING", "STAGE_OUT");
+    Set<String> SUSPENDED_STATUS_CODE_LIST = Set.of("RESV_DEL_HOLD", "REVOKED", "STOPPED", "SUSPENDED");
+    Set<String> DELETED_STATUS_CODE_LIST = Set.of("SPECIAL_EXIT", "CANCELLED", "TIMEOUT");
+    Set<String> ERROR_STATUS_CODE_LIST = Set.of("BOOT_FAIL", "DEADLINE", "FAILED", "NODE_FAIL", "OUT_OF_MEMORY",
+            "PREEMPTED");
 
     /**
      * The actual mapping method expects the source object as parameter and returns the target object.
      *
-     * @param sgeJob a mapping object
+     * @param slurmJob is a mapping object
      * @return The mapped object
      */
+    @Mapping(target = "id", source = "slurmJob.jobId")
+    @Mapping(target = "priority", source = "slurmJob.priority")
+    @Mapping(target = "name", source = "slurmJob.name")
+    @Mapping(target = "owner", source = "slurmJob.userName")
+    @Mapping(target = "queueName", source = "slurmJob.partition")
+    @Mapping(target = "slots", ignore = true)
     @Mapping(target = "state", ignore = true)
-    Job sgeJobToJob(SgeJob sgeJob);
+    Job slurmJobToJob(final SlurmJob slurmJob);
 
-    /**
-     * The method maps the state attribute of the source object to the target object.
-     *
-     * @param sgeJob a mapping object
-     * @param job    a target object
-     */
     @AfterMapping
-    default void fillState(final SgeJob sgeJob, final @MappingTarget Job job) {
-        job.setState(mapJobState(sgeJob.getState(), sgeJob.getStateCode()));
+    default void fillState(final SlurmJob slurmJob, final @MappingTarget Job job) {
+        job.setState(mapJobState(slurmJob.getState(), slurmJob.getStateCompact()));
     }
 
     default JobState mapJobState(final String state, final String stateCode) {
         return JobState.builder()
-                .category(determineStateCategory(stateCode))
+                .category(defineCategory(state))
                 .state(state)
                 .stateCode(stateCode)
                 .build();
     }
 
-    default JobState.Category determineStateCategory(final String stateCode) {
-        final String finishedStatusCode = "z";
-        final List<String> pendingStatusCodeList = List.of("qw", "Rq", "hqw", "hRwq");
-        final List<String> runningStatusCodeList = List.of("r", "hr", "t", "Rr", "Rt");
-        final List<String> suspendedStatusCodeList = List.of("s", "ts", "S", "tS", "T", "tT",
-                "Rs", "Rts", "RS", "RtS", "RT", "RtT");
-        final List<String> deletedStatusCodeList = List.of("dr", "dt", "dRr", "dRt", "ds",
-                "dS", "dT", "dRs", "dRS", "dRT");
-        final List<String> errorStatusCodeList = List.of("Eqw", "Ehqw", "EhRqw");
-
-        if (stateCode.equals(finishedStatusCode)) {
+    default JobState.Category defineCategory(final String state) {
+        if (state.equals(FINISHED_STATUS_CODE)) {
             return JobState.Category.FINISHED;
         }
-        if (pendingStatusCodeList.contains(stateCode)) {
+        if (PENDING_STATUS_CODE_LIST.contains(state)) {
             return JobState.Category.PENDING;
         }
-        if (runningStatusCodeList.contains(stateCode)) {
+        if (RUNNING_STATUS_CODE_LIST.contains(state)) {
             return JobState.Category.RUNNING;
         }
-        if (suspendedStatusCodeList.contains(stateCode)) {
+        if (SUSPENDED_STATUS_CODE_LIST.contains(state)) {
             return JobState.Category.SUSPENDED;
         }
-        if (deletedStatusCodeList.contains(stateCode)) {
+        if (DELETED_STATUS_CODE_LIST.contains(state)) {
             return JobState.Category.DELETED;
         }
-        if (errorStatusCodeList.contains(stateCode)) {
+        if (ERROR_STATUS_CODE_LIST.contains(state)) {
             return JobState.Category.ERROR;
         }
         return JobState.Category.UNKNOWN;
