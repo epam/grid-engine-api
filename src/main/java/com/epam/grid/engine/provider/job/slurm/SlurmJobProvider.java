@@ -19,33 +19,45 @@
 
 package com.epam.grid.engine.provider.job.slurm;
 
+import com.epam.grid.engine.cmd.CmdExecutor;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.JobFilter;
 import com.epam.grid.engine.entity.Listing;
-import com.epam.grid.engine.entity.job.DeleteJobFilter;
-import com.epam.grid.engine.entity.job.DeletedJobInfo;
 import com.epam.grid.engine.entity.job.Job;
 import com.epam.grid.engine.entity.job.JobOptions;
+import com.epam.grid.engine.entity.job.JobState;
+import com.epam.grid.engine.entity.job.DeletedJobInfo;
 import com.epam.grid.engine.entity.job.JobLogInfo;
+import com.epam.grid.engine.entity.job.DeleteJobFilter;
+import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.mapper.job.slurm.SlurmJobMapper;
 import com.epam.grid.engine.provider.job.JobProvider;
 
 import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.slurm.job.SacctCommandParser;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.thymeleaf.context.Context;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
+import static com.epam.grid.engine.utils.TextConstants.COMMA;
+import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 
 /**
  * This class performs various actions with jobs for the SLURM engine.
@@ -57,6 +69,11 @@ public class SlurmJobProvider implements JobProvider {
     private static final int JOB_OUTPUT_HEADER_LINES_COUNT = 1;
     private static final String JOB_FILTER = "filter";
     private static final String SQUEUE_COMMAND = "squeue";
+    private static final String OPTIONS = "options";
+    private static final String LOG_DIR = "logDir";
+    private static final String ENV_VARIABLES = "envVariables";
+    private static final String SBATCH_COMMAND = "sbatch";
+    private static final Pattern SUBMITTED_JOB_PATTERN = Pattern.compile("Submitted batch job (\\d+).*");
 
     /**
      * The MapStruct mapping mechanism used.
@@ -83,17 +100,25 @@ public class SlurmJobProvider implements JobProvider {
      */
     private final GridEngineCommandCompiler commandCompiler;
 
+    /**
+     * The path to the directory where all log files will be stored
+     * occurred when processing the job.
+     */
+    private final String logDir;
+
     public SlurmJobProvider(final SlurmJobMapper jobMapper,
                             final SimpleCmdExecutor simpleCmdExecutor,
                             final GridEngineCommandCompiler commandCompiler,
                             @Value("${slurm.job.output-fields-count:52}") final int fieldsCount,
                             @Value("${SLURM_JOB_NOT_FOUND_MESSAGE:[slurm_load_jobs error: Invalid job id specified]}")
-                            final String jobIdNotFoundMessage) {
+                            final String jobIdNotFoundMessage,
+                            @Value("${job.log.dir}") final String logDir) {
         this.jobMapper = jobMapper;
         this.simpleCmdExecutor = simpleCmdExecutor;
         this.commandCompiler = commandCompiler;
         this.fieldsCount = fieldsCount;
         this.jobIdNotFoundMessage = jobIdNotFoundMessage;
+        this.logDir = logDir;
     }
 
     @Override
@@ -115,7 +140,8 @@ public class SlurmJobProvider implements JobProvider {
 
     @Override
     public Job runJob(final JobOptions options) {
-        throw new UnsupportedOperationException("Run job operation haven't implemented yet");
+        validateJobOptions(options);
+        return buildNewJob(getResultOfExecutedCommand(simpleCmdExecutor, makeSbatchCommand(options)));
     }
 
     @Override
@@ -132,6 +158,83 @@ public class SlurmJobProvider implements JobProvider {
     @Override
     public InputStream getJobLogFile(final int jobId, final JobLogInfo.Type logType) {
         throw new UnsupportedOperationException("Job log info file retrieving operation haven't implemented yet");
+    }
+
+    /**
+     * Creates the structure of an executable command based on the passed options.
+     *
+     * @param options User-defined options.
+     * @return The structure of an executable command.
+     */
+    private String[] makeSbatchCommand(final JobOptions options) {
+        final Context context = new Context();
+        context.setVariable(OPTIONS, options);
+        context.setVariable(LOG_DIR, logDir);
+        context.setVariable(ENV_VARIABLES, extractEnvVariablesFromOptions(options));
+        return commandCompiler.compileCommand(getProviderType(), SBATCH_COMMAND, context);
+    }
+
+    private void validateJobOptions(final JobOptions options) {
+        if (!StringUtils.hasText(options.getCommand())) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, "Command should be specified!");
+        }
+        if (options.getPriority() < 0) {
+            throw new IllegalArgumentException("Priority should be between 0 and 4_294_967_294");
+        }
+        if (options.getParallelEnvOptions() != null) {
+            throw new UnsupportedOperationException("Parallel environment variables are not supported yet!");
+        }
+        if (options.isCanBeBinary()) {
+            throw new UnsupportedOperationException("Scripts from command line are not supported yet!");
+        }
+    }
+
+    private String getResultOfExecutedCommand(final CmdExecutor cmdExecutor, final String[] command) {
+        final CommandResult result = cmdExecutor.execute(command);
+        if (result.getExitCode() != 0) {
+            CommandsUtils.throwExecutionDetails(result, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return parseJobId(result.getStdOut().get(0));
+    }
+
+    /**
+     * Gets the job ID from the string.
+     *
+     * @param jobString A string that can contain the job ID.
+     * @return JobID or an empty string.
+     */
+    private String parseJobId(final String jobString) {
+        final Matcher matcher = SUBMITTED_JOB_PATTERN.matcher(jobString);
+        return matcher.find()
+                ? matcher.group(1)
+                : EMPTY_STRING;
+    }
+
+    private String extractEnvVariablesFromOptions(final JobOptions options) {
+        return getVariablesFromMap(MapUtils.emptyIfNull(options.getEnvVariables()));
+    }
+
+    private String getVariablesFromMap(final Map<String, String> varMap) {
+        return varMap.entrySet().stream()
+                .map(this::convertEnvVarToString)
+                .collect(Collectors.joining(COMMA));
+    }
+
+    private String convertEnvVarToString(final Map.Entry<String, String> entry) {
+        final String value = entry.getValue();
+        if (StringUtils.hasText(value)) {
+            return entry.getKey() + EQUAL_SIGN + value;
+        }
+        return entry.getKey();
+    }
+
+    private Job buildNewJob(final String id) {
+        return Job.builder()
+                .id(Integer.parseInt(id))
+                .state(JobState.builder()
+                        .category(JobState.Category.PENDING)
+                        .build())
+                .build();
     }
 
     /**

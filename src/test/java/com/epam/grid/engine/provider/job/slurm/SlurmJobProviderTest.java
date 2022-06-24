@@ -26,7 +26,9 @@ import com.epam.grid.engine.entity.EngineType;
 import com.epam.grid.engine.entity.JobFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.job.Job;
+import com.epam.grid.engine.entity.job.JobOptions;
 import com.epam.grid.engine.entity.job.JobState;
+import com.epam.grid.engine.entity.job.ParallelEnvOptions;
 import com.epam.grid.engine.exception.GridEngineException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -47,6 +49,8 @@ import java.util.List;
 import java.util.Collections;
 import java.util.stream.Stream;
 
+
+import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
 import static org.mockito.Mockito.doReturn;
 
 @SpringBootTest(properties = {"grid.engine.type=SLURM"})
@@ -134,6 +138,19 @@ public class SlurmJobProviderTest {
             + "DEPENDENCY|ARRAY_JOB_ID|GROUP|SOCKETS_PER_NODE|CORES_PER_SOCKET|THREADS_PER_CORE|ARRAY_TASK_ID|"
             + "TIME_LEFT|TIME|NODELIST|CONTIGUOUS|PARTITION|PRIORITY|NODELIST(REASON)|START_TIME|STATE|UID|"
             + "SUBMIT_TIME|LICENSES|CORE_SPEC|SCHEDNODES|WORK_DIR");
+
+    private static final String TEXT_JOB_SUBMITTED = "Submitted batch job 2";
+    private static final String SBATCH = "sbatch";
+    private static final String ENV_VARIABLES = "envVariables";
+    private static final String ENV_VAR_KEY = "parameter1";
+    private static final String ENV_VAR_VALUE = "parameter1Value";
+    private static final String ENV_VAR_MAP_ENTRY = "parameter1=parameter1Value";
+    private static final String ENV_VAR_FLAG = "--export=";
+    private static final String ENV_VAR_MAP_ONLY_KEY = "parameter1";
+    private static final String JOB_PRIORITY4 = "9999";
+    private static final String JOB_NAME4 = "newSlurmJob";
+    private static final String JOB_PARTITION = "normal";
+    private static final String JOB_WORK_DIR = "/data/";
 
     @Autowired
     private SlurmJobProvider slurmJobProvider;
@@ -392,4 +409,139 @@ public class SlurmJobProviderTest {
                 .build();
     }
 
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidJobOptions")
+    public void shouldThrowGridEngineExceptionMakingSbatchCommand(final JobOptions jobOptions) {
+        final Throwable thrown = Assertions.assertThrows(GridEngineException.class,
+                () -> slurmJobProvider.runJob(jobOptions));
+        Assertions.assertNotNull(thrown.getMessage());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideUnsupportedJobOptions")
+    public void shouldThrowUnsupportedExceptionMakingSbatchCommand(final JobOptions jobOptions) {
+        final Throwable thrown = Assertions.assertThrows(UnsupportedOperationException.class,
+                () -> slurmJobProvider.runJob(jobOptions));
+        Assertions.assertNotNull(thrown.getMessage());
+    }
+
+    static Stream<Arguments> provideInvalidJobOptions() {
+        return Stream.of(
+                Arguments.of(JobOptions.builder().command(null).build()),
+                Arguments.of(JobOptions.builder().command(EMPTY_STRING).build())
+        );
+    }
+
+    static Stream<Arguments> provideUnsupportedJobOptions() {
+        return Stream.of(
+                Arguments.of(JobOptions.builder().priority(-100)
+                        .command(JOB_NAME1).build()),
+                Arguments.of(JobOptions.builder().parallelEnvOptions(new ParallelEnvOptions(EMPTY_STRING, 1, 10))
+                        .command(JOB_NAME1).build())
+        );
+    }
+
+    @Test
+    public void shouldThrowsExceptionBecauseOptionsAreEmpty() {
+        final JobOptions jobOptions = new JobOptions();
+        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
+                slurmJobProvider.runJob(jobOptions));
+        Assertions.assertNotNull(thrown.getMessage());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideValidEnvVariables")
+    public void shouldMakeValidEnvVariables(final JobOptions.JobOptionsBuilder jobOptionsBuilder,
+                                            final String expectedEnvVariables, final String[] command) {
+        final JobOptions jobOptions = jobOptionsBuilder.build();
+        final CommandResult commandResult = new CommandResult();
+
+        jobOptions.setCommand(JOB_NAME1);
+        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
+        commandResult.setStdErr(EMPTY_LIST);
+
+        mockCommandCompilation(SBATCH, commandResult, command);
+        slurmJobProvider.runJob(jobOptions);
+        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
+                commandCaptor.capture(),
+                contextCaptor.capture());
+
+        Assertions.assertEquals(contextCaptor.getValue().getVariable(ENV_VARIABLES), expectedEnvVariables);
+    }
+
+    static Stream<Arguments> provideValidEnvVariables() {
+        return Stream.of(
+                Arguments.of(getSimpleJobCommand().envVariables(Collections.singletonMap(ENV_VAR_KEY, ENV_VAR_VALUE)),
+                        ENV_VAR_MAP_ENTRY, new String[]{SBATCH, ENV_VAR_FLAG, ENV_VAR_MAP_ENTRY, JOB_NAME1}),
+                Arguments.of(getSimpleJobCommand().envVariables(Collections.singletonMap(ENV_VAR_KEY, EMPTY_STRING)),
+                        ENV_VAR_MAP_ONLY_KEY, new String[]{SBATCH, ENV_VAR_FLAG, ENV_VAR_KEY, JOB_NAME1})
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideCorrectSbatchCommands")
+    public void shouldReturnScheduledJobIndex(final String[] command) {
+        final Job expectedFilteredJob = correctBuild();
+        final JobOptions jobOptions = new JobOptions();
+        final CommandResult commandResult = new CommandResult();
+
+        jobOptions.setCommand(JOB_NAME1);
+        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
+        commandResult.setStdErr(EMPTY_LIST);
+
+        mockCommandCompilation(SBATCH, commandResult, command);
+        final Job result = slurmJobProvider.runJob(jobOptions);
+        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
+                commandCaptor.capture(),
+                contextCaptor.capture());
+
+        Assertions.assertEquals(expectedFilteredJob.getId(), result.getId());
+    }
+
+    static Stream<Arguments> provideCorrectSbatchCommands() {
+        return mapObjectsToArgumentsStream(
+                new String[]{SBATCH, "--export=", ENV_VAR_MAP_ENTRY, JOB_NAME1},
+                new String[]{SBATCH, "--priority=", JOB_PRIORITY4, JOB_NAME1},
+                new String[]{SBATCH, "-J", JOB_NAME4, JOB_NAME1},
+                new String[]{SBATCH, "--partition=", JOB_PARTITION, JOB_NAME1},
+                new String[]{SBATCH, "-D", JOB_WORK_DIR, JOB_NAME1}
+        );
+    }
+
+    @Test
+    public void shouldReturnCorrectJob() {
+        final Job expectedFilteredJob = correctBuild();
+        final JobOptions jobOptions = new JobOptions();
+        final CommandResult commandResult = new CommandResult();
+        jobOptions.setCommand(JOB_NAME1);
+
+        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
+        commandResult.setStdErr(EMPTY_LIST);
+
+        mockCommandCompilation(SBATCH, commandResult, SBATCH, JOB_NAME1);
+        final Job result = slurmJobProvider.runJob(jobOptions);
+        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
+                commandCaptor.capture(),
+                contextCaptor.capture());
+
+        Assertions.assertEquals(expectedFilteredJob, result);
+    }
+
+    private static JobOptions.JobOptionsBuilder getSimpleJobCommand() {
+        return JobOptions.builder().command(JOB_NAME1);
+    }
+
+    private static Stream<Arguments> mapObjectsToArgumentsStream(final Object... args) {
+        return Stream.of(args).map(Arguments::of);
+    }
+
+    private static Job correctBuild() {
+        return Job.builder()
+                .id(runningJobTemplate().getId())
+                .state(JobState.builder()
+                        .category(JobState.Category.PENDING)
+                        .build())
+                .build();
+    }
 }
