@@ -32,4 +32,6 @@ public final class TextConstants {
     public static final String NEW_LINE_DELIMITER = "\n";
     public static final String SPACE = " ";
     public static final String NONE = "NONE";
+    public static final String APOSTROPHE = "\"";
+    public static final String SINGLE_QUOTE_SIGN = "'";
 }

@@ -38,7 +38,7 @@ qsub
 -o [(${logDir})]$JOB_ID.out
 [/]
 [# th:if="${envVariables != null}"]
--v [(${envVariables})]
+-v "[(${envVariables})]"
 [/]
 [(${options.command})]
 [# th:if="${not #lists.isEmpty(options.arguments)}"]
