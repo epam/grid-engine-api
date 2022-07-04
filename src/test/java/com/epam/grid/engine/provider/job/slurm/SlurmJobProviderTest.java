@@ -143,9 +143,9 @@ public class SlurmJobProviderTest {
     private static final String SBATCH = "sbatch";
     private static final String ENV_VARIABLES = "envVariables";
     private static final String ENV_VAR_KEY = "parameter1";
-    private static final String ENV_VAR_VALUE = "parameter1Value";
-    private static final String ENV_VAR_MAP_ENTRY = "parameter1=parameter1Value";
-    private static final String ENV_VAR_FLAG = "--export=";
+    private static final String ENV_VAR_VALUE = "parameter one value with spaces";
+    private static final String ENV_VAR_MAP_ENTRY = "parameter1=parameter one value with spaces";
+    private static final String ENV_VAR_FLAG = "--export ";
     private static final String ENV_VAR_MAP_ONLY_KEY = "parameter1";
     private static final String JOB_PRIORITY4 = "9999";
     private static final String JOB_NAME4 = "newSlurmJob";
@@ -426,6 +426,14 @@ public class SlurmJobProviderTest {
         Assertions.assertNotNull(thrown.getMessage());
     }
 
+    @ParameterizedTest
+    @MethodSource("provideIllegalArgumentJobOptions")
+    public void shouldThrowIllegalArumentExceptionMakingSbatchCommand(final JobOptions jobOptions) {
+        final Throwable thrown = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> slurmJobProvider.runJob(jobOptions));
+        Assertions.assertNotNull(thrown.getMessage());
+    }
+
     static Stream<Arguments> provideInvalidJobOptions() {
         return Stream.of(
                 Arguments.of(JobOptions.builder().command(null).build()),
@@ -435,9 +443,14 @@ public class SlurmJobProviderTest {
 
     static Stream<Arguments> provideUnsupportedJobOptions() {
         return Stream.of(
-                Arguments.of(JobOptions.builder().priority(-100)
-                        .command(JOB_NAME1).build()),
                 Arguments.of(JobOptions.builder().parallelEnvOptions(new ParallelEnvOptions(EMPTY_STRING, 1, 10))
+                        .command(JOB_NAME1).build())
+        );
+    }
+
+    static Stream<Arguments> provideIllegalArgumentJobOptions() {
+        return Stream.of(
+                Arguments.of(JobOptions.builder().priority(-100)
                         .command(JOB_NAME1).build())
         );
     }
@@ -501,11 +514,11 @@ public class SlurmJobProviderTest {
 
     static Stream<Arguments> provideCorrectSbatchCommands() {
         return mapObjectsToArgumentsStream(
-                new String[]{SBATCH, "--export=", ENV_VAR_MAP_ENTRY, JOB_NAME1},
+                new String[]{SBATCH, "--export ", ENV_VAR_MAP_ENTRY, JOB_NAME1},
                 new String[]{SBATCH, "--priority=", JOB_PRIORITY4, JOB_NAME1},
-                new String[]{SBATCH, "-J", JOB_NAME4, JOB_NAME1},
+                new String[]{SBATCH, "--job-name=", JOB_NAME4, JOB_NAME1},
                 new String[]{SBATCH, "--partition=", JOB_PARTITION, JOB_NAME1},
-                new String[]{SBATCH, "-D", JOB_WORK_DIR, JOB_NAME1}
+                new String[]{SBATCH, "--chdir=", JOB_WORK_DIR, JOB_NAME1}
         );
     }
 
