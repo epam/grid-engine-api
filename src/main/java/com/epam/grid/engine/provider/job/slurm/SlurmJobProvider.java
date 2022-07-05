@@ -178,8 +178,8 @@ public class SlurmJobProvider implements JobProvider {
         if (!StringUtils.hasText(options.getCommand())) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Command should be specified!");
         }
-        if (options.getPriority() < 0) {
-            throw new IllegalArgumentException("Priority should be between 0 and 4_294_967_294");
+        if (options.getPriority() != null && options.getPriority() < 1L) {
+            throw new IllegalArgumentException("Priority should be between 1 and 4_294_967_294");
         }
         if (options.getParallelEnvOptions() != null) {
             throw new UnsupportedOperationException("Parallel environment variables are not supported yet!");

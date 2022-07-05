@@ -75,9 +75,9 @@ public class SlurmJobProviderTest {
     private static final String JOB_NAME1 = "test.sh";
     private static final String JOB_NAME2 = "test3.sh";
     private static final String JOB_NAME3 = "test.sh";
-    private static final double JOB_PRIORITY1 = 0.99998474121093;
-    private static final double JOB_PRIORITY2 = 0.99998474074527;
-    private static final double JOB_PRIORITY3 = 0.00000000000000;
+    private static final Long JOB_PRIORITY1 = 999_999_999L;
+    private static final Long JOB_PRIORITY2 = 2_200_000_000L;
+    private static final Long JOB_PRIORITY3 = 0L;
     private static final List<String> NAME = Collections.singletonList(JOB_NAME1);
     private static final List<Integer> ID = Collections.singletonList(7);
 
@@ -89,7 +89,7 @@ public class SlurmJobProviderTest {
                     + "TIME_LEFT|TIME|NODELIST|CONTIGUOUS|PARTITION|PRIORITY|NODELIST(REASON)|START_TIME|STATE|UID|"
                     + "SUBMIT_TIME|LICENSES|CORE_SPEC|SCHEDNODES|WORK_DIR",
             "(null)|N/A|1|0|2022-05-18T10:29:10|(null)|root|OK|2|test.sh|(null)|5-00:00:00|500M||/data/test.sh|"
-                    + "0.99998474121093|normal|None||R|root|(null)|(null)||0|*:*:*|2|worker1|1|1||2|0|*|*|*|N/A|"
+                    + "9.99999999E8|normal|None||R|root|(null)|(null)||0|*:*:*|2|worker1|1|1||2|0|*|*|*|N/A|"
                     + "4-21:35:49|2:24:11|worker1|0|normal|4294901759|worker1|2022-05-13T10:29:10|RUNNING|0|"
                     + "2022-05-13T10:29:09|(null)|N/A|(null)|/");
 
@@ -99,11 +99,11 @@ public class SlurmJobProviderTest {
                     + "CPUS|NODES|DEPENDENCY|ARRAY_JOB_ID|GROUP|SOCKETS_PER_NODE|CORES_PER_SOCKET|THREADS_PER_CORE|"
                     + "ARRAY_TASK_ID|TIME_LEFT|TIME|NODELIST|CONTIGUOUS|PARTITION|PRIORITY|NODELIST(REASON)|START_TIME|"
                     + "STATE|UID|SUBMIT_TIME|LICENSES|CORE_SPEC|SCHEDNODES|WORK_DIR",
-            "(null)|N/A|1|0|N/A|(null)|root|OK|4|test3.sh|(null)|5-00:00:00|500M||/data/test3.sh|0.99998474074527|"
+            "(null)|N/A|1|0|N/A|(null)|root|OK|4|test3.sh|(null)|5-00:00:00|500M||/data/test3.sh|2.2E9|"
                     + "normal|Resources||PD|root|(null)|(null)||0|*:*:*|4|n/a|1|1||4|0|*|*|*|N/A|5-00:00:00|0:00||0|"
                     + "normal|4294901757|(Resources)|N/A|PENDING|0|2022-05-15T08:03:42|(null)|N/A|(null)|/",
             "(null)|N/A|1|0|2022-05-18T10:29:10|(null)|root|OK|2|test.sh|(null)|5-00:00:00|500M||/data/test.sh|"
-                    + "0.99998474121093|normal|None||R|root|(null)|(null)||0|*:*:*|2|worker1|1|1||2|0|*|*|*|N/A|"
+                    + "9.99999999E8|normal|None||R|root|(null)|(null)||0|*:*:*|2|worker1|1|1||2|0|*|*|*|N/A|"
                     + "4-21:35:49|2:24:11|worker1|0|normal|4294901759|worker1|2022-05-13T10:29:10|RUNNING|0|"
                     + "2022-05-13T10:29:09|(null)|N/A|(null)|/");
     private static final List<String> THREE_VALID_JOBS_STDOUT = List.of("ACCOUNT|TRES_PER_NODE|MIN_CPUS|MIN_TMP_DISK|"
@@ -116,11 +116,11 @@ public class SlurmJobProviderTest {
                     + "0.00000000000000|normal|None||S|root|(null)|(null)||0|*:*:*|5|worker1|1|1||2|0|*|*|*|N/A|"
                     + "4-18:52:51|5:07:09|worker1|0|normal|0|worker1|2022-05-15T08:03:38|SUSPENDED|0|"
                     + "2022-05-15T08:03:37|(null)|N/A|(null)|/",
-            "(null)|N/A|1|0|N/A|(null)|root|OK|4|test3.sh|(null)|5-00:00:00|500M||/data/test3.sh|0.99998474074527|"
+            "(null)|N/A|1|0|N/A|(null)|root|OK|4|test3.sh|(null)|5-00:00:00|500M||/data/test3.sh|2.2E9|"
                     + "normal|Resources||PD|root|(null)|(null)||0|*:*:*|4|n/a|1|1||4|0|*|*|*|N/A|5-00:00:00|0:00||0|"
                     + "normal|4294901757|(Resources)|N/A|PENDING|0|2022-05-15T08:03:42|(null)|N/A|(null)|/",
             "(null)|N/A|1|0|2022-05-18T10:29:10|(null)|root|OK|2|test.sh|(null)|5-00:00:00|500M||/data/test.sh|"
-                    + "0.99998474121093|normal|None||R|root|(null)|(null)||0|*:*:*|2|worker1|1|1||2|0|*|*|*|N/A|"
+                    + "9.99999999E8|normal|None||R|root|(null)|(null)||0|*:*:*|2|worker1|1|1||2|0|*|*|*|N/A|"
                     + "4-21:35:49|2:24:11|worker1|0|normal|4294901759|worker1|2022-05-13T10:29:10|RUNNING|0|"
                     + "2022-05-13T10:29:09|(null)|N/A|(null)|/");
 
@@ -450,7 +450,7 @@ public class SlurmJobProviderTest {
 
     static Stream<Arguments> provideIllegalArgumentJobOptions() {
         return Stream.of(
-                Arguments.of(JobOptions.builder().priority(-100)
+                Arguments.of(JobOptions.builder().priority(-100L)
                         .command(JOB_NAME1).build())
         );
     }
