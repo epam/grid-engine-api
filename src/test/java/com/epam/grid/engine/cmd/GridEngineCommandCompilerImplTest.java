@@ -554,7 +554,7 @@ public class GridEngineCommandCompilerImplTest {
                         new String[]{QSUB, NAME_OPTION, JOB_NAME, JOB_COMMAND}),
                 Arguments.of(getSimpleJobCommand().workingDir(WORK_DIR_NAME),
                         new String[]{QSUB, WORK_DIR_OPTION, WORK_DIR_NAME, JOB_COMMAND}),
-                Arguments.of(getSimpleJobCommand().priority(Integer.parseInt(PRIORITY)),
+                Arguments.of(getSimpleJobCommand().priority(Long.parseLong(PRIORITY)),
                         new String[]{QSUB, PRIORITY_OPTION, PRIORITY, JOB_COMMAND}),
                 Arguments.of(getSimpleJobCommand().queues(List.of(QUEUE, QUEUE2)),
                         new String[]{QSUB, QUEUES_OPTION, QUEUE, QUEUE2, JOB_COMMAND}),

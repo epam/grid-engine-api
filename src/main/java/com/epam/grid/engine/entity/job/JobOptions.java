@@ -59,7 +59,7 @@ public class JobOptions {
     /**
      * Job priority.
      */
-    private int priority;
+    private Long priority;
     /**
      * A list of queues in which the job should be processed.
      */
