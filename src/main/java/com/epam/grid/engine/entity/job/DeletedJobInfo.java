@@ -37,7 +37,7 @@ public class DeletedJobInfo {
     /**
      * List of IDs of deleted jobs.
      */
-    private List<Long> id;
+    private List<Long> ids;
     /**
      * A user whose jobs deleted.
      */

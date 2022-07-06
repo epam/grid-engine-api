@@ -109,7 +109,7 @@ public class SgeJobProviderTest {
     private static final String SOME_JOB_NAME_1 = "someName";
     private static final String SOME_JOB_NAME_2 = "favoriteJob";
     private static final List<String> NAME = Collections.singletonList(SOME_JOB_NAME_1);
-    private static final List<Integer> ID = Collections.singletonList(7);
+    private static final List<Long> ID = Collections.singletonList(7L);
 
     private static final int SOME_JOB_ID = 10;
     private static final int SOME_LINES = 10;
@@ -568,7 +568,7 @@ public class SgeJobProviderTest {
                 .user(SGEUSER)
                 .build();
         final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
+                .ids(List.of(1L))
                 .user(SGEUSER)
                 .build();
         final CommandResult commandResult = new CommandResult();
@@ -588,7 +588,7 @@ public class SgeJobProviderTest {
                 .user(SGEUSER)
                 .build();
         final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
+                .ids(List.of(1L))
                 .user(SGEUSER)
                 .build();
         final CommandResult commandResult = new CommandResult();

@@ -37,7 +37,7 @@ public class JobFilter {
     /**
      * List of job IDs.
      */
-    private List<Integer> ids;
+    private List<Long> ids;
     /**
      * State of job.
      */

@@ -28,8 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.epam.grid.engine.utils.TextConstants.SPACE;
+import static com.epam.grid.engine.utils.TextConstants.QUOTE;
 import static com.epam.grid.engine.utils.TextConstants.APOSTROPHE;
-import static com.epam.grid.engine.utils.TextConstants.SINGLE_QUOTE_SIGN;
 
 /**
  * This class performs the formation of the structure of the executed command
@@ -63,9 +63,9 @@ public class CommandArgUtils {
         final StringBuilder quotedPart = new StringBuilder();
 
         for (String commandPart : commandParts) {
-            if (commandPart.startsWith(APOSTROPHE) || commandPart.startsWith(SINGLE_QUOTE_SIGN)) {
+            if (commandPart.startsWith(QUOTE) || commandPart.startsWith(APOSTROPHE)) {
                 appendCommandToBuilder(quotedPart, commandPart);
-            } else if (commandPart.endsWith(APOSTROPHE) || commandPart.endsWith(SINGLE_QUOTE_SIGN)) {
+            } else if (commandPart.endsWith(QUOTE) || commandPart.endsWith(APOSTROPHE)) {
                 appendCommandToBuilder(quotedPart, commandPart);
                 dumpQuotedToResults(quotedPart, result);
             } else {
@@ -78,8 +78,8 @@ public class CommandArgUtils {
 
     private static void addQuotedPartToBuilderOrDump(final String commandPart, final StringBuilder quotedPart,
                                                      final List<String> result) {
-        if (quotedPart.length() != 0 && !quotedPart.toString().endsWith(APOSTROPHE)
-                && !quotedPart.toString().endsWith(SINGLE_QUOTE_SIGN)) {
+        if (quotedPart.length() != 0 && !quotedPart.toString().endsWith(QUOTE)
+                && !quotedPart.toString().endsWith(APOSTROPHE)) {
             appendCommandToBuilder(quotedPart, commandPart);
         } else {
             dumpQuotedToResultsIfPresent(quotedPart, result);

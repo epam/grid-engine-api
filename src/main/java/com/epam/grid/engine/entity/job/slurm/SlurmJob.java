@@ -80,7 +80,7 @@ public class SlurmJob {
     /**
      * Job ID. This will have a unique value for each element of job arrays and each component of heterogeneous jobs.
      */
-    private int jobId;
+    private long jobId;
     /**
      * Job or job step name.
      */

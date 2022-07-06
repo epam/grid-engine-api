@@ -67,7 +67,7 @@ public class JobOperationProviderServiceTest {
                 .user(SGEUSER)
                 .build();
         final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
+                .ids(List.of(1L))
                 .user(SGEUSER)
                 .build();
         doReturn(expectedDeletedJobInfo).when(jobProvider).deleteJob(deleteJobFilter);
@@ -79,7 +79,7 @@ public class JobOperationProviderServiceTest {
     public void shouldReturnCorrectResponse() {
         final Listing<Job> jobListing = listingParser(listParser());
         final JobFilter jobFilter = new JobFilter();
-        jobFilter.setIds(Collections.singletonList(7));
+        jobFilter.setIds(Collections.singletonList(7L));
 
         doReturn(jobListing).when(jobProvider).filterJobs(jobFilter);
         Assertions.assertEquals(jobListing, jobOperationProviderService.filter(jobFilter));

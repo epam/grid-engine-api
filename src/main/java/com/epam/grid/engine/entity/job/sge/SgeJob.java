@@ -55,7 +55,7 @@ public class SgeJob {
      * The id of the job.
      */
     @XmlElement(name = "JB_job_number")
-    private int id;
+    private long id;
 
     /**
      * The priority of the job.

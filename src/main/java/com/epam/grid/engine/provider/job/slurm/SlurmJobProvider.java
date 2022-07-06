@@ -39,6 +39,7 @@ import com.epam.grid.engine.provider.job.JobProvider;
 import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.slurm.job.SacctCommandParser;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -49,14 +50,17 @@ import org.thymeleaf.context.Context;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
+import static com.epam.grid.engine.utils.TextConstants.COLON;
 import static com.epam.grid.engine.utils.TextConstants.COMMA;
+import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
 import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 
 /**
@@ -68,11 +72,16 @@ import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 public class SlurmJobProvider implements JobProvider {
     private static final int JOB_OUTPUT_HEADER_LINES_COUNT = 1;
     private static final String JOB_FILTER = "filter";
+    private static final String SCANCEL_COMMAND = "scancel";
     private static final String SQUEUE_COMMAND = "squeue";
+    private static final String SBATCH_COMMAND = "sbatch";
     private static final String OPTIONS = "options";
     private static final String LOG_DIR = "logDir";
     private static final String ENV_VARIABLES = "envVariables";
-    private static final String SBATCH_COMMAND = "sbatch";
+    private static final String START_TERMINATING_JOB_PREFIX = "scancel: Terminating job";
+    private static final String KILL_JOB_ERROR_PREFIX = "scancel: error: Kill job error on job id";
+    private static final int JOB_ID_START_POSITION = START_TERMINATING_JOB_PREFIX.length() + 1;
+    private static final int ERROR_JOB_ID_POSITION = KILL_JOB_ERROR_PREFIX.length() + 1;
     private static final Pattern SUBMITTED_JOB_PATTERN = Pattern.compile("Submitted batch job (\\d+).*");
 
     /**
@@ -109,10 +118,12 @@ public class SlurmJobProvider implements JobProvider {
     public SlurmJobProvider(final SlurmJobMapper jobMapper,
                             final SimpleCmdExecutor simpleCmdExecutor,
                             final GridEngineCommandCompiler commandCompiler,
-                            @Value("${slurm.job.output-fields-count:52}") final int fieldsCount,
-                            @Value("${SLURM_JOB_NOT_FOUND_MESSAGE:[slurm_load_jobs error: Invalid job id specified]}")
+                            @Value("${slurm.job.output-fields-count:52}")
+                            final int fieldsCount,
+                            @Value("${SLURM_JOB_NOT_FOUND_MESSAGE:slurm_load_jobs error: Invalid job id specified}")
                             final String jobIdNotFoundMessage,
-                            @Value("${job.log.dir}") final String logDir) {
+                            @Value("${job.log.dir}")
+                            final String logDir) {
         this.jobMapper = jobMapper;
         this.simpleCmdExecutor = simpleCmdExecutor;
         this.commandCompiler = commandCompiler;
@@ -133,7 +144,7 @@ public class SlurmJobProvider implements JobProvider {
         if (result.getExitCode() != 0 && !jobNotFoundByIdError(result)) {
             CommandsUtils.throwExecutionDetails(result);
         } else if (!result.getStdErr().isEmpty()) {
-            log.warn(result.getStdErr().toString());
+            log.warn(CommandsUtils.mergeOutputLines(result.getStdErr()));
         }
         return mapToJobListing(result.getStdOut());
     }
@@ -144,9 +155,52 @@ public class SlurmJobProvider implements JobProvider {
         return buildNewJob(getResultOfExecutedCommand(simpleCmdExecutor, makeSbatchCommand(options)));
     }
 
+    /**
+     * Deletes the job being performed according to the specified parameters.
+     *
+     * @param deleteJobFilter Search parameters for the job being deleted.
+     * @return Information about the deleted job.
+     */
     @Override
     public DeletedJobInfo deleteJob(final DeleteJobFilter deleteJobFilter) {
-        throw new UnsupportedOperationException("Job deletion operation haven't implemented yet");
+        if (!StringUtils.hasText(deleteJobFilter.getUser()) && deleteJobFilter.getId() == null) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST,
+                    String.format("Incorrect filling in %s. Either `id` or `user` should be specified for job removal!",
+                            deleteJobFilter));
+        }
+        if (deleteJobFilter.getId() != null && deleteJobFilter.getId() <= 0) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST,
+                    String.format("Id specified in %s for job removal is invalid!", deleteJobFilter));
+        }
+
+        final String jobOwner;
+        if (StringUtils.hasText(deleteJobFilter.getUser())) {
+            jobOwner = deleteJobFilter.getUser();
+        } else {
+            jobOwner = getJobById(deleteJobFilter.getId()).getOwner();
+        }
+
+        final CommandResult result = simpleCmdExecutor.execute(makeScancelCommand(deleteJobFilter));
+        if (result.getExitCode() != 0) {
+            CommandsUtils.throwExecutionDetails(result, HttpStatus.NOT_FOUND);
+        }
+
+        final Set<String> errorDeletingJobs = result.getStdErr().stream()
+                .filter((s) -> s.startsWith(KILL_JOB_ERROR_PREFIX))
+                .map((s) -> s.substring(ERROR_JOB_ID_POSITION, s.indexOf(COLON, ERROR_JOB_ID_POSITION)))
+                .collect(Collectors.toSet());
+
+        final List<Long> deletedJobIds = result.getStdErr().stream()
+                .filter((s) -> s.startsWith(START_TERMINATING_JOB_PREFIX))
+                .map((s) -> s.substring(JOB_ID_START_POSITION))
+                .filter((id) -> !errorDeletingJobs.contains(id))
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+
+        if (deletedJobIds.isEmpty()) {
+            CommandsUtils.throwExecutionDetails(result, HttpStatus.NOT_FOUND);
+        }
+        return new DeletedJobInfo(deletedJobIds, jobOwner);
     }
 
     @Override
@@ -178,8 +232,8 @@ public class SlurmJobProvider implements JobProvider {
         if (!StringUtils.hasText(options.getCommand())) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Command should be specified!");
         }
-        if (options.getPriority() != null && options.getPriority() < 1L) {
-            throw new IllegalArgumentException("Priority should be between 1 and 4_294_967_294");
+        if (options.getPriority() != null && options.getPriority() < 0) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, "Priority should be between 0 and 4_294_967_294");
         }
         if (options.getParallelEnvOptions() != null) {
             throw new UnsupportedOperationException("Parallel environment variables are not supported yet!");
@@ -263,6 +317,30 @@ public class SlurmJobProvider implements JobProvider {
     }
 
     private boolean jobNotFoundByIdError(final CommandResult result) {
-        return result.getStdErr().toString().equals(jobIdNotFoundMessage);
+        return ListUtils.emptyIfNull(result.getStdErr()).stream()
+                .anyMatch(s -> !s.equals(jobIdNotFoundMessage));
+    }
+
+    /**
+     * This method creates the structure of the executed job deletion command based on the passed options.
+     *
+     * @param filter User-defined conditions for searching for deleted jobs.
+     * @return The structure of an executable command.
+     */
+    private String[] makeScancelCommand(final DeleteJobFilter filter) {
+        final Context context = new Context();
+        context.setVariable(JOB_FILTER, filter);
+        return commandCompiler.compileCommand(getProviderType(), SCANCEL_COMMAND, context);
+    }
+
+    private Job getJobById(final Long id) {
+        final JobFilter jobFilter = JobFilter.builder()
+                .ids(Collections.singletonList(id))
+                .build();
+
+        return ListUtils.emptyIfNull(filterJobs(jobFilter).getElements()).stream()
+                .findFirst()
+                .orElseThrow(() -> new GridEngineException(HttpStatus.NOT_FOUND,
+                        String.format("Id specified in %d for job removal not found!", id)));
     }
 }
