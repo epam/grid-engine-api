@@ -118,7 +118,7 @@ public class JobOperationControllerTest extends AbstractControllerTest {
                 .user(SGEUSER)
                 .build();
         final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
+                .ids(List.of(1L))
                 .user(SGEUSER)
                 .build();
 

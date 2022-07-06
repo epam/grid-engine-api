@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TextConstants {
 
+    public static final String COLON = ":";
     public static final String COMMA = ",";
     public static final String DOT = ".";
     public static final String EQUAL_SIGN = "=";
@@ -32,6 +33,6 @@ public final class TextConstants {
     public static final String NEW_LINE_DELIMITER = "\n";
     public static final String SPACE = " ";
     public static final String NONE = "NONE";
-    public static final String APOSTROPHE = "\"";
-    public static final String SINGLE_QUOTE_SIGN = "'";
+    public static final String QUOTE = "\"";
+    public static final String APOSTROPHE = "'";
 }

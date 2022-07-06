@@ -1,0 +1,10 @@
+scancel -v
+[# th:if="${filter.force}"]
+    -H
+[/]
+[# th:if="${filter.user != null}"]
+    -u [(${filter.user})]
+[/]
+[# th:if="${filter.id != null}"]
+    [(${filter.id})]
+[/]

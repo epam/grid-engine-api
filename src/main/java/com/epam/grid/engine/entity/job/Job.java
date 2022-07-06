@@ -38,7 +38,7 @@ public class Job {
     /**
      * ID of job.
      */
-    private int id;
+    private long id;
     /**
      * Priority of job.
      */
