@@ -25,6 +25,7 @@ import com.epam.grid.engine.entity.hostgroup.HostGroup;
 import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,14 +33,17 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmHostGroupProvider implements HostGroupProvider {
 
+    @Override
     public EngineType getProviderType() {
         return EngineType.SLURM;
     }
 
     /**
-     * @throws UnsupportedOperationException because Slurm doesn't have approach of stored host groups
+     * This method only throws an error because Slurm doesn't have an approach of stored host groups.
+     * @throws UnsupportedOperationException - slurm doesn't have an approach of stored host groups
      */
     @Override
     public List<HostGroup> listHostGroups(final HostGroupFilter hostGroupFilter) {
@@ -47,7 +51,8 @@ public class SlurmHostGroupProvider implements HostGroupProvider {
     }
 
     /**
-     * @throws UnsupportedOperationException because Slurm doesn't have approach of stored host groups
+     * This method only throws an error because Slurm doesn't have an approach of stored host groups.
+     * @throws UnsupportedOperationException - slurm doesn't have an approach of stored host groups
      */
     @Override
     public HostGroup getHostGroup(final String groupName) {

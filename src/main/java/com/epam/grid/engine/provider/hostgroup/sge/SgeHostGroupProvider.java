@@ -34,6 +34,7 @@ import com.epam.grid.engine.provider.utils.sge.common.SgeOutputParsingUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeHostGroupProvider implements HostGroupProvider {
 
     private static final String AT_SYMBOL = "@";
