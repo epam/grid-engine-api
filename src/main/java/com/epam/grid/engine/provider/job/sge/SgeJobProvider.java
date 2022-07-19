@@ -20,6 +20,7 @@
 package com.epam.grid.engine.provider.job.sge;
 
 import com.epam.grid.engine.cmd.CmdExecutor;
+import com.epam.grid.engine.cmd.CommandArgUtils;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
@@ -56,7 +57,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -68,10 +68,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.epam.grid.engine.provider.utils.CommandsUtils.mergeOutputLines;
-import static com.epam.grid.engine.utils.TextConstants.COMMA;
 import static com.epam.grid.engine.utils.TextConstants.DOT;
 import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
-import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 import static com.epam.grid.engine.utils.TextConstants.SPACE;
 
@@ -91,6 +89,7 @@ public class SgeJobProvider implements JobProvider {
     private static final String QDEL_COMMAND = "qdel";
     private static final String QSTAT_COMMAND = "qstat";
     private static final String QSUB_COMMAND = "qsub";
+    private static final String ARGUMENTS = "arguments";
     private static final String OPTIONS = "options";
     private static final String LOG_DIR = "logDir";
     private static final String ENV_VARIABLES = "envVariables";
@@ -279,13 +278,9 @@ public class SgeJobProvider implements JobProvider {
         final Context context = new Context();
         context.setVariable(OPTIONS, options);
         context.setVariable(LOG_DIR, logDir);
-        context.setVariable(ENV_VARIABLES, extractEnvVariablesFromOptions(options));
+        context.setVariable(ARGUMENTS, CommandArgUtils.toEscapeQuotes(options.getArguments()));
+        context.setVariable(ENV_VARIABLES, CommandArgUtils.envVariablesMapToString(options.getEnvVariables()));
         return commandCompiler.compileCommand(getProviderType(), QSUB_COMMAND, context);
-    }
-
-    private String extractEnvVariablesFromOptions(final JobOptions options) {
-        final Optional<Map<String, String>> envVariables = Optional.ofNullable(options.getEnvVariables());
-        return envVariables.map(this::getVariablesFromMap).orElse(null);
     }
 
     private String getResultOfExecutedCommand(final CmdExecutor cmdExecutor, final String[] command) {
@@ -359,20 +354,6 @@ public class SgeJobProvider implements JobProvider {
         return matcher.find()
                 ? matcher.group().trim()
                 : EMPTY_STRING;
-    }
-
-    private String getVariablesFromMap(final Map<String, String> varMap) {
-        return varMap.entrySet().stream()
-                .map(this::envVarToString)
-                .collect(Collectors.joining(COMMA));
-    }
-
-    private String envVarToString(final Map.Entry<String, String> entry) {
-        final String value = entry.getValue();
-        if (StringUtils.hasText(value)) {
-            return entry.getKey() + EQUAL_SIGN + value;
-        }
-        return entry.getKey();
     }
 
     private void validateJobOptions(final JobOptions options) {

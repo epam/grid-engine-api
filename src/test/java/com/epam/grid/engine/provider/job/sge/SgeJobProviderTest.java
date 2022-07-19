@@ -40,13 +40,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
-import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -96,12 +93,6 @@ public class SgeJobProviderTest {
     private static final String TEST_QUEUE = "test_queue";
     private static final String JOB_COMMAND = "simple.sh";
 
-    private static final String ENV_VAR_KEY = "myVarKey";
-    private static final String ENV_VAR_VALUE = "some";
-    private static final String ENV_VAR_MAP_ENTRY = "myVarKey=some";
-    private static final String ENV_VAR_MAP_ONLY_KEY = "myVarKey";
-    private static final String ENV_VAR_OPTION = "-v";
-    private static final String ENV_VARIABLES = "envVariables";
     private static final String TEXT_JOB_SUBMITTED = "Your job 7 (\"demo_v.sh\") has been submitted";
 
     private static final String SOMEUSER = "someuser";
@@ -219,15 +210,6 @@ public class SgeJobProviderTest {
     @MockBean
     private JobFilter mockJobFilter;
 
-    @Captor
-    private ArgumentCaptor<EngineType> engineTypeCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> commandCaptor;
-
-    @Captor
-    private ArgumentCaptor<Context> contextCaptor;
-
     private static String buildTemplate(final Map<Integer, List<String>> jobParams) {
         final String jobBody = jobParams.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -320,9 +302,6 @@ public class SgeJobProviderTest {
 
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, USER_QDEL, SGEUSER, TYPE_XML);
         final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -341,9 +320,6 @@ public class SgeJobProviderTest {
 
         mockCommandCompilation(QSTAT_COMMAND, commandResult, DEFAULT_REQUEST);
         final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -362,9 +338,6 @@ public class SgeJobProviderTest {
 
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
         final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -383,9 +356,6 @@ public class SgeJobProviderTest {
 
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
         final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -454,39 +424,6 @@ public class SgeJobProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideValidEnvVariables")
-    public void shouldMakeValidEnvVariables(final JobOptions.JobOptionsBuilder jobOptionsBuilder,
-                                            final String expectedEnvVariables, final String[] command) {
-        final JobOptions jobOptions = jobOptionsBuilder.build();
-        final CommandResult commandResult = new CommandResult();
-
-        jobOptions.setCommand(COMMAND_SCRIPT_FILE);
-        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
-        commandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(QSUB, commandResult, command);
-        sgeJobProvider.runJob(jobOptions);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(contextCaptor.getValue().getVariable(ENV_VARIABLES), expectedEnvVariables);
-    }
-
-    static Stream<Arguments> provideValidEnvVariables() {
-        return Stream.of(
-                Arguments.of(getSimpleJobCommand().envVariables(Collections.singletonMap(ENV_VAR_KEY, ENV_VAR_VALUE)),
-                        ENV_VAR_MAP_ENTRY, new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_MAP_ENTRY, COMMAND_SCRIPT_FILE}),
-                Arguments.of(getSimpleJobCommand().envVariables(Collections.singletonMap(ENV_VAR_KEY, EMPTY_STRING)),
-                        ENV_VAR_MAP_ONLY_KEY, new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_KEY, COMMAND_SCRIPT_FILE})
-        );
-    }
-
-    private static JobOptions.JobOptionsBuilder getSimpleJobCommand() {
-        return JobOptions.builder().command(JOB_COMMAND);
-    }
-
-    @ParameterizedTest
     @MethodSource("provideCorrectQsubCommands")
     public void shouldReturnScheduledJobIndex(final String[] command) {
         final Job expectedFilteredJob = correctBuild();
@@ -499,9 +436,6 @@ public class SgeJobProviderTest {
 
         mockCommandCompilation(QSUB, commandResult, command);
         final Job result = sgeJobProvider.runJob(jobOptions);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(expectedFilteredJob.getId(), result.getId());
     }
@@ -528,9 +462,6 @@ public class SgeJobProviderTest {
 
         mockCommandCompilation(QSUB, commandResult, QSUB, COMMAND_SCRIPT_FILE);
         final Job result = sgeJobProvider.runJob(jobOptions);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(expectedFilteredJob, result);
     }
@@ -712,9 +643,6 @@ public class SgeJobProviderTest {
         mockCommandCompilation(QSTAT_COMMAND, commandResult, TYPE_XML);
         doReturn(jobState).when(mockJobFilter).getState();
         final Listing<Job> result = sgeJobProvider.filterJobs(null);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         if (jobState.equals(PENDING_STRING)) {
             Assertions.assertEquals(expectedFilteredJob.get(1), result.getElements().get(0));

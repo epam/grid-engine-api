@@ -39,19 +39,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 
@@ -132,12 +128,9 @@ public class SlurmJobProviderTest {
 
     private static final String TEXT_JOB_SUBMITTED = "Submitted batch job " + SOME_CORRECT_JOB_ID_STRING;
     private static final String SBATCH = "sbatch";
-    private static final String ENV_VARIABLES = "envVariables";
     private static final String ENV_VAR_KEY = "parameter1";
-    private static final String ENV_VAR_VALUE = "parameter one value with spaces";
-    private static final String ENV_VAR_MAP_ENTRY = "parameter1=parameter one value with spaces";
-    private static final String ENV_VAR_FLAG = "--export ";
-    private static final String ENV_VAR_MAP_ONLY_KEY = "parameter1";
+    private static final String ENV_VAR_VALUE = "some value with spaces";
+    private static final String ENV_VAR_COMMAND_ARG = String.format("%s=%s", ENV_VAR_KEY, ENV_VAR_VALUE);
     private static final String JOB_PRIORITY4 = "9999";
     private static final String JOB_PARTITION = "normal";
     private static final String JOB_WORK_DIR = "/data/";
@@ -164,15 +157,6 @@ public class SlurmJobProviderTest {
 
     @MockBean
     private GridEngineCommandCompiler mockCommandCompiler;
-
-    @Captor
-    private ArgumentCaptor<EngineType> engineTypeCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> commandCaptor;
-
-    @Captor
-    private ArgumentCaptor<Context> contextCaptor;
 
     @Test
     public void failsWithInvalidOutput() {
@@ -232,9 +216,6 @@ public class SlurmJobProviderTest {
 
         mockCommandCompilation(SQUEUE_COMMAND, commandResult, ALL_FORMAT, OWNER_FILTRATION_KEY, SLURM_USER);
         final Listing<Job> result = slurmJobProvider.filterJobs(jobFilter);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -252,9 +233,6 @@ public class SlurmJobProviderTest {
 
         mockCommandCompilation(SQUEUE_COMMAND, commandResult, ALL_FORMAT, STATE_FILTRATION_KEY, SLURM_USER);
         final Listing<Job> result = slurmJobProvider.filterJobs(jobFilter);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -272,9 +250,6 @@ public class SlurmJobProviderTest {
 
         mockCommandCompilation(SQUEUE_COMMAND, commandResult, ALL_FORMAT, JOB_LIST_KEY, SOME_CORRECT_JOB_ID_STRING);
         final Listing<Job> result = slurmJobProvider.filterJobs(jobFilter);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -292,9 +267,6 @@ public class SlurmJobProviderTest {
 
         mockCommandCompilation(SQUEUE_COMMAND, commandResult, ALL_FORMAT, JOB_NAME_FILTRATION_KEY, JOB_NAME1);
         final Listing<Job> result = slurmJobProvider.filterJobs(jobFilter);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(1, result.getElements().size());
         Assertions.assertEquals(runningJob, result.getElements().get(0));
@@ -327,9 +299,6 @@ public class SlurmJobProviderTest {
 
         final JobFilter jobFilter = JobFilter.builder().state(jobState).build();
         final Listing<Job> result = slurmJobProvider.filterJobs(jobFilter);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(expectedJob, result.getElements().get(0));
     }
@@ -448,37 +417,6 @@ public class SlurmJobProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideValidEnvVariables")
-    public void shouldMakeValidEnvVariables(final Map<String, String> jobOptionsEnvironment, final String[] command,
-                                            final String expectedEnvVariables) {
-        final JobOptions jobOptions = JobOptions.builder()
-                .command(JOB_NAME1)
-                .envVariables(jobOptionsEnvironment)
-                .build();
-
-        final CommandResult commandResult = new CommandResult();
-        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
-        commandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(SBATCH, commandResult, command);
-        slurmJobProvider.runJob(jobOptions);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(contextCaptor.getValue().getVariable(ENV_VARIABLES), expectedEnvVariables);
-    }
-
-    static Stream<Arguments> provideValidEnvVariables() {
-        return Stream.of(
-                Arguments.of(Collections.singletonMap(ENV_VAR_KEY, ENV_VAR_VALUE),
-                        new String[]{SBATCH, ENV_VAR_FLAG, ENV_VAR_MAP_ENTRY, JOB_NAME1}, ENV_VAR_MAP_ENTRY),
-                Arguments.of(Collections.singletonMap(ENV_VAR_KEY, EMPTY_STRING),
-                        new String[]{SBATCH, ENV_VAR_FLAG, ENV_VAR_KEY, JOB_NAME1}, ENV_VAR_MAP_ONLY_KEY)
-        );
-    }
-
-    @ParameterizedTest
     @MethodSource("provideCorrectSbatchCommands")
     public void shouldReturnScheduledJobIndex(final String[] command) {
         final Job expectedFilteredJob = correctBuild();
@@ -491,16 +429,13 @@ public class SlurmJobProviderTest {
 
         mockCommandCompilation(SBATCH, commandResult, command);
         final Job result = slurmJobProvider.runJob(jobOptions);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(expectedFilteredJob.getId(), result.getId());
     }
 
     static Stream<Arguments> provideCorrectSbatchCommands() {
         return Stream.of(
-                    new String[]{SBATCH, "--export=", ENV_VAR_MAP_ENTRY, JOB_NAME1},
+                    new String[]{SBATCH, "--export=", ENV_VAR_COMMAND_ARG, JOB_NAME1},
                     new String[]{SBATCH, "--priority=", JOB_PRIORITY4, JOB_NAME1},
                     new String[]{SBATCH, "-J", JOB_NAME3, JOB_NAME1},
                     new String[]{SBATCH, "--partition=", JOB_PARTITION, JOB_NAME1},
@@ -521,9 +456,6 @@ public class SlurmJobProviderTest {
 
         mockCommandCompilation(SBATCH, commandResult, SBATCH, JOB_NAME1);
         final Job result = slurmJobProvider.runJob(jobOptions);
-        Mockito.verify(mockCommandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
 
         Assertions.assertEquals(expectedFilteredJob, result);
     }
