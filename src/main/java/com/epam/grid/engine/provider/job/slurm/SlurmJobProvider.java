@@ -20,6 +20,7 @@
 package com.epam.grid.engine.provider.job.slurm;
 
 import com.epam.grid.engine.cmd.CmdExecutor;
+import com.epam.grid.engine.cmd.CommandArgUtils;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
@@ -40,7 +41,6 @@ import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.slurm.job.SacctCommandParser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
@@ -52,16 +52,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.epam.grid.engine.utils.TextConstants.COLON;
-import static com.epam.grid.engine.utils.TextConstants.COMMA;
 import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
-import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 
 /**
  * This class performs various actions with jobs for the SLURM engine.
@@ -75,6 +72,7 @@ public class SlurmJobProvider implements JobProvider {
     private static final String SCANCEL_COMMAND = "scancel";
     private static final String SQUEUE_COMMAND = "squeue";
     private static final String SBATCH_COMMAND = "sbatch";
+    private static final String ARGUMENTS = "arguments";
     private static final String OPTIONS = "options";
     private static final String LOG_DIR = "logDir";
     private static final String ENV_VARIABLES = "envVariables";
@@ -224,7 +222,8 @@ public class SlurmJobProvider implements JobProvider {
         final Context context = new Context();
         context.setVariable(OPTIONS, options);
         context.setVariable(LOG_DIR, logDir);
-        context.setVariable(ENV_VARIABLES, extractEnvVariablesFromOptions(options));
+        context.setVariable(ARGUMENTS, CommandArgUtils.toEscapeQuotes(options.getArguments()));
+        context.setVariable(ENV_VARIABLES, CommandArgUtils.envVariablesMapToString(options.getEnvVariables()));
         return commandCompiler.compileCommand(getProviderType(), SBATCH_COMMAND, context);
     }
 
@@ -262,24 +261,6 @@ public class SlurmJobProvider implements JobProvider {
         return matcher.find()
                 ? matcher.group(1)
                 : EMPTY_STRING;
-    }
-
-    private String extractEnvVariablesFromOptions(final JobOptions options) {
-        return getVariablesFromMap(MapUtils.emptyIfNull(options.getEnvVariables()));
-    }
-
-    private String getVariablesFromMap(final Map<String, String> varMap) {
-        return varMap.entrySet().stream()
-                .map(this::convertEnvVarToString)
-                .collect(Collectors.joining(COMMA));
-    }
-
-    private String convertEnvVarToString(final Map.Entry<String, String> entry) {
-        final String value = entry.getValue();
-        if (StringUtils.hasText(value)) {
-            return entry.getKey() + EQUAL_SIGN + value;
-        }
-        return entry.getKey();
     }
 
     private Job buildNewJob(final String id) {

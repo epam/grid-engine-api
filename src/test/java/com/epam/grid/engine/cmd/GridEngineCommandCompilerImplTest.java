@@ -62,7 +62,6 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.RUNNING_S
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SPACE;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SUSPENDED_STRING;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.ZOMBIE_STRING;
-import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
@@ -214,9 +213,9 @@ public class GridEngineCommandCompilerImplTest {
     private static final String QUEUES_OPTION = "-q";
     private static final String ENV_VAR_OPTION = "-v";
     private static final String ENV_VAR_KEY = "myVarKey";
-    private static final String ENV_VAR_VALUE = "some";
-    private static final String ENV_VAR_MAP_ENTRY = "myVarKey=some";
-    private static final String ENV_VAR_MAP_ONLY_KEY = "myVarKey";
+    private static final String ENV_VAR_VALUE = "some value with spaces";
+    private static final String ENV_VAR_MAP_ENTRY = String.format("%s=\"%s\"", ENV_VAR_KEY, ENV_VAR_VALUE);
+    private static final String ENV_VAR_MAP_ONLY_KEY = ENV_VAR_KEY;
     private static final String PARALLEL_ENV_OPTION = "-pe";
     private static final String PE_NAME = "smp";
     private static final String PE_MIN_PARAM = "1";
@@ -225,6 +224,7 @@ public class GridEngineCommandCompilerImplTest {
     private static final String ARG1 = "arg1";
     private static final String ARG2 = "arg2";
     private static final String OPTIONS = "options";
+    private static final String ARGUMENTS = "arguments";
     private static final String ENV_VARIABLES = "envVariables";
 
     private static final String LOG_DIR = "logDir";
@@ -541,6 +541,7 @@ public class GridEngineCommandCompilerImplTest {
         final JobOptions jobOptions = jobOptionsBuilder.build();
         final Context context = new Context();
         context.setVariable(OPTIONS, jobOptions);
+        context.setVariable(ARGUMENTS, CommandArgUtils.toEscapeQuotes(jobOptions.getArguments()));
         assertArrayEquals(expectedCommand, commandCompiler.compileCommand(EngineType.SGE, QSUB, context));
     }
 
@@ -587,19 +588,17 @@ public class GridEngineCommandCompilerImplTest {
         final JobOptions jobOptions = jobOptionsBuilder.build();
         final Context context = new Context();
         context.setVariable(OPTIONS, jobOptions);
-        context.setVariable(ENV_VARIABLES, envVariables);
+        context.setVariable(ENV_VARIABLES, CommandArgUtils.toEscapeQuotes(envVariables));
         assertArrayEquals(expectedCommand, commandCompiler.compileCommand(EngineType.SGE, QSUB, context));
     }
 
     static Stream<Arguments> provideValidParametersWithEnvVariables() {
         return Stream.of(
-                Arguments.of(getSimpleJobCommand(), ENV_VAR_KEY.concat(EQUAL_SIGN).concat(ENV_VAR_VALUE),
-                        new String[]{QSUB, ENV_VAR_OPTION, getQuotedValue(ENV_VAR_MAP_ENTRY), JOB_COMMAND})
+                Arguments.of(getSimpleJobCommand(), ENV_VAR_MAP_ENTRY,
+                        new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_MAP_ENTRY, JOB_COMMAND}),
+                Arguments.of(getSimpleJobCommand(), ENV_VAR_MAP_ONLY_KEY,
+                        new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_MAP_ONLY_KEY, JOB_COMMAND})
         );
-    }
-
-    private static String getQuotedValue(String value) {
-        return String.format("\"%s\"", value);
     }
 
     @Test

@@ -19,17 +19,18 @@
 
 package com.epam.grid.engine.cmd;
 
+import com.epam.grid.engine.utils.TextConstants;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import static com.epam.grid.engine.utils.TextConstants.SPACE;
-import static com.epam.grid.engine.utils.TextConstants.QUOTE;
-import static com.epam.grid.engine.utils.TextConstants.APOSTROPHE;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * This class performs the formation of the structure of the executed command
@@ -38,67 +39,150 @@ import static com.epam.grid.engine.utils.TextConstants.APOSTROPHE;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CommandArgUtils {
 
-    private static final String DELIMITERS = " \\" + System.lineSeparator();
+    private static final char CR = '\r';
+    private static final char LF = '\n';
+    private static final char TAB = '\t';
+    private static final char SPACE = ' ';
+    private static final char QUOTE = '"';
+    private static final char BACKSLASH = '\\';
 
     /**
-     * This method forms a command structure from a string command.
+     * This method forms a command structure from a prepared string by command template.
      *
-     * @param command The command from the template.
+     * <p> It iterates over the received string character by character. The command line will be split
+     * into tokens by the whitespace characters.
+     *
+     * <p> If it comes across an unescaped quote character (the previous character was not a backslash) - next
+     * some characters will be a token until it comes across next an unescaped quote.
+     *
+     * <p> If quotes will be used in the token, they must be additionally escaped with a slash, and the token
+     * itself in the command template must be enclosed in quotes. Also, the token in the command template
+     * must be enclosed in quotes if  whitespace characters are to be used in it.
+     *
+     * <blockquote>For example, the command string
+     * <p><b> {@code "  firstToken  \"second token\"  \"third token with \\"quotes\\"   \""}</b>
+     * <p> yields the following result
+     * <p><b> {@code {"firstToken", "second token", "third token with \"quotes\"   "}}</b>
+     * </blockquote>
+     *
+     * @param command The command from the template engine.
      * @return The command's structure that is ready for execution.
      */
     public static String[] splitCommandIntoArgs(final String command) {
-        final String[] arr = checkAndMergeQuotesStrings(StringUtils.tokenizeToStringArray(command, DELIMITERS));
-        return Arrays.stream(arr).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
+        final List<String> result = new ArrayList<>();
+        final StringBuilder token = new StringBuilder();
+
+        boolean isQuote = false;
+        int backslashes = 0;
+
+        for (final char ch : command.toCharArray()) {
+            if (ch == QUOTE && token.length() == 0 && backslashes == 0) {
+                isQuote = true;
+            } else {
+                if (isQuote) {
+                    switch (ch) {
+                        case BACKSLASH:
+                            backslashes++;
+                            continue;
+                        case QUOTE:
+                            if (backslashes == 0) {
+                                result.add(token.toString());
+                                token.setLength(0);
+                                isQuote = false;
+                                continue;
+                            }
+                            backslashes--;
+                            break;
+                        default:
+                    }
+                    if (backslashes > 0) {
+                        IntStream.range(0, backslashes).forEach((index) -> token.append(BACKSLASH));
+                        backslashes = 0;
+                    }
+                } else {
+                    if (isWhitespaceCharacter(ch)) {
+                        result.add(token.toString());
+                        token.setLength(0);
+                        continue;
+                    }
+                }
+                token.append(ch);
+            }
+        }
+
+        result.add(token.toString().trim());
+        return result.stream().filter(t -> !t.isEmpty()).toArray(String[]::new);
+    }
+
+    private static boolean isWhitespaceCharacter(final char ch) {
+        switch (ch) {
+            case CR:
+            case LF:
+            case SPACE:
+            case TAB:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /**
-     * This method searches for parts of quoted strings that are split into several strings when parsing
-     * and combines them into one string.
+     * Forms a structure to pass environment variables as command argument.
      *
-     * @param commandParts The command from the template after parsing.
-     * @return The command's structure.
+     * @param variables the map of environment variables as keys and their values.
+     * @return the string of the created structure.
      */
-    private static String[] checkAndMergeQuotesStrings(final String[] commandParts) {
-        final List<String> result = new ArrayList<>();
-        final StringBuilder quotedPart = new StringBuilder();
+    public static String envVariablesMapToString(final Map<String, String> variables) {
+        final String envVariables = MapUtils.emptyIfNull(variables).entrySet().stream()
+                .map(CommandArgUtils::envVarToString)
+                .collect(Collectors.joining(TextConstants.COMMA));
+        return toEscapeQuotes(envVariables);
+    }
 
-        for (String commandPart : commandParts) {
-            if (commandPart.startsWith(QUOTE) || commandPart.startsWith(APOSTROPHE)) {
-                appendCommandToBuilder(quotedPart, commandPart);
-            } else if (commandPart.endsWith(QUOTE) || commandPart.endsWith(APOSTROPHE)) {
-                appendCommandToBuilder(quotedPart, commandPart);
-                dumpQuotedToResults(quotedPart, result);
-            } else {
-                addQuotedPartToBuilderOrDump(commandPart, quotedPart, result);
+    private static String envVarToString(final Map.Entry<String, String> entry) {
+        final String value = entry.getValue();
+        if (StringUtils.hasText(value)) {
+            return String.format("%s=\"%s\"", entry.getKey(), value);
+        }
+        return entry.getKey();
+    }
+
+    /**
+     * Converts the token for use in the template as a "convertedToken" to avoid splitting
+     * during further parsing. Adds another backslash before each quote.
+     *
+     * @param token the token to handle.
+     * @return the converted token.
+     */
+    public static String toEscapeQuotes(final String token) {
+        final StringBuilder result = new StringBuilder();
+        int backslashes = 0;
+
+        for (final char ch : token.toCharArray()) {
+            if (ch == BACKSLASH) {
+                backslashes++;
+                continue;
             }
+            if (ch == QUOTE) {
+                backslashes++;
+            }
+            IntStream.range(0, backslashes).forEach((index) -> result.append(BACKSLASH));
+            backslashes = 0;
+            result.append(ch);
         }
-        dumpQuotedToResultsIfPresent(quotedPart, result);
-        return result.toArray(new String[0]);
+        return result.toString();
     }
 
-    private static void addQuotedPartToBuilderOrDump(final String commandPart, final StringBuilder quotedPart,
-                                                     final List<String> result) {
-        if (quotedPart.length() != 0 && !quotedPart.toString().endsWith(QUOTE)
-                && !quotedPart.toString().endsWith(APOSTROPHE)) {
-            appendCommandToBuilder(quotedPart, commandPart);
-        } else {
-            dumpQuotedToResultsIfPresent(quotedPart, result);
-            result.add(commandPart);
-        }
-    }
-
-    private static void dumpQuotedToResults(final StringBuilder quotedPart, final List<String> result) {
-        result.add(quotedPart.toString());
-        quotedPart.setLength(0);
-    }
-
-    private static void dumpQuotedToResultsIfPresent(final StringBuilder quotedPart, final List<String> result) {
-        if (quotedPart.length() > 0) {
-            dumpQuotedToResults(quotedPart, result);
-        }
-    }
-
-    private static void appendCommandToBuilder(final StringBuilder quotedPart, final String commandPart) {
-        quotedPart.append(SPACE).append(commandPart);
+    /**
+     * Converts each of tokens for use in the template as a "convertedToken" to avoid splitting
+     * during further parsing.
+     *
+     * @param tokens the list of tokens to handle.
+     * @return the converted token list.
+     */
+    public static List<String> toEscapeQuotes(final List<String> tokens) {
+        return ListUtils.emptyIfNull(tokens).stream()
+                .map(CommandArgUtils::toEscapeQuotes)
+                .collect(Collectors.toList());
     }
 }
