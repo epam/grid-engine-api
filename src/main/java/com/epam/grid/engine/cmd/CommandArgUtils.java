@@ -185,4 +185,14 @@ public class CommandArgUtils {
                 .map(CommandArgUtils::toEscapeQuotes)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Encloses the token in quotes.
+     *
+     * @param token the token to handle.
+     * @return the quote enclosed token.
+     */
+    public static String toEncloseInQuotes(final String token) {
+        return QUOTE + token + QUOTE;
+    }
 }

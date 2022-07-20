@@ -39,6 +39,7 @@ import com.epam.grid.engine.provider.job.JobProvider;
 
 import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.slurm.job.SacctCommandParser;
+import com.epam.grid.engine.utils.TextConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,11 +69,13 @@ import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmJobProvider implements JobProvider {
     private static final int JOB_OUTPUT_HEADER_LINES_COUNT = 1;
+    private static final long MAX_SENT_PRIORITY = 4_294_967_294L;
     private static final String JOB_FILTER = "filter";
     private static final String SCANCEL_COMMAND = "scancel";
     private static final String SQUEUE_COMMAND = "squeue";
     private static final String SBATCH_COMMAND = "sbatch";
     private static final String ARGUMENTS = "arguments";
+    private static final String BINARY_COMMAND = "binaryCommand";
     private static final String OPTIONS = "options";
     private static final String LOG_DIR = "logDir";
     private static final String ENV_VARIABLES = "envVariables";
@@ -222,8 +225,17 @@ public class SlurmJobProvider implements JobProvider {
         final Context context = new Context();
         context.setVariable(OPTIONS, options);
         context.setVariable(LOG_DIR, logDir);
-        context.setVariable(ARGUMENTS, CommandArgUtils.toEscapeQuotes(options.getArguments()));
         context.setVariable(ENV_VARIABLES, CommandArgUtils.envVariablesMapToString(options.getEnvVariables()));
+
+        if (options.isCanBeBinary()) {
+            final String binaryCommandArguments = options.getArguments().stream()
+                    .map(CommandArgUtils::toEncloseInQuotes)
+                    .map(CommandArgUtils::toEscapeQuotes)
+                    .collect(Collectors.joining(TextConstants.SPACE));
+            context.setVariable(BINARY_COMMAND, options.getCommand() + TextConstants.SPACE + binaryCommandArguments);
+        } else {
+            context.setVariable(ARGUMENTS, CommandArgUtils.toEscapeQuotes(options.getArguments()));
+        }
         return commandCompiler.compileCommand(getProviderType(), SBATCH_COMMAND, context);
     }
 
@@ -231,14 +243,11 @@ public class SlurmJobProvider implements JobProvider {
         if (!StringUtils.hasText(options.getCommand())) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Command should be specified!");
         }
-        if (options.getPriority() != null && options.getPriority() < 0) {
+        if (options.getPriority() != null && (options.getPriority() < 0 || options.getPriority() > MAX_SENT_PRIORITY)) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Priority should be between 0 and 4_294_967_294");
         }
         if (options.getParallelEnvOptions() != null) {
             throw new UnsupportedOperationException("Parallel environment variables are not supported yet!");
-        }
-        if (options.isCanBeBinary()) {
-            throw new UnsupportedOperationException("Scripts from command line are not supported yet!");
         }
     }
 
