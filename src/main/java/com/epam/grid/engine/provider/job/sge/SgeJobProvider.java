@@ -39,6 +39,7 @@ import com.epam.grid.engine.entity.job.sge.SgeQueueListing;
 import com.epam.grid.engine.mapper.job.sge.SgeJobMapper;
 import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.provider.job.JobProvider;
+import com.epam.grid.engine.provider.utils.DirectoryPathUtils;
 import com.epam.grid.engine.provider.utils.JaxbUtils;
 import com.epam.grid.engine.provider.utils.sge.job.QstatCommandParser;
 import com.epam.grid.engine.provider.utils.CommandsUtils;
@@ -124,11 +125,12 @@ public class SgeJobProvider implements JobProvider {
     public SgeJobProvider(final SgeJobMapper jobMapper,
                           final SimpleCmdExecutor simpleCmdExecutor,
                           final GridEngineCommandCompiler commandCompiler,
-                          @Value("${job.log.dir}") final String logDir) {
+                          @Value("${job.log.dir}") final String logDir,
+                          @Value("${grid.engine.shared.folder}") final String gridSharedFolder) {
         this.jobMapper = jobMapper;
         this.simpleCmdExecutor = simpleCmdExecutor;
         this.commandCompiler = commandCompiler;
-        this.logDir = logDir;
+        this.logDir = DirectoryPathUtils.buildProperDir(gridSharedFolder, logDir).toString();
     }
 
     /**
