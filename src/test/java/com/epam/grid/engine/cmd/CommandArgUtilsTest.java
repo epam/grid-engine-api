@@ -109,4 +109,11 @@ class CommandArgUtilsTest {
                 CommandArgUtils.toEscapeQuotes(List.of(EMPTY_STRING, ONE_VALUE_WITH_SPACES, QUOTE_TEST_TOKEN))
         );
     }
+
+    @Test
+    public void shouldReturnEnclosedInQuotesToken() {
+        Assertions.assertEquals(
+                "\"someToken\"", CommandArgUtils.toEncloseInQuotes("someToken")
+        );
+    }
 }
