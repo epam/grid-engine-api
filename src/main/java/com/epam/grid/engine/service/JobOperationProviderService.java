@@ -28,6 +28,7 @@ import com.epam.grid.engine.entity.job.JobLogInfo;
 import com.epam.grid.engine.entity.job.JobOptions;
 import com.epam.grid.engine.provider.job.JobProvider;
 
+import com.epam.grid.engine.provider.utils.DirectoryPathUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * This class defines operations for processing information from the user
@@ -46,20 +48,27 @@ import java.nio.file.Path;
 public class JobOperationProviderService {
 
     private final String logDir;
+    private final String gridSharedFolder;
     private final JobProvider jobProvider;
 
     /**
      * Constructor, sets created jobProvider bean to the class field and the path to job log.
      *
-     * @param jobProvider created JobProvider
-     * @param logDir      the path to the directory where all log files will be stored
-     *                    occurred when processing the job
+     * @param jobProvider      created JobProvider
+     * @param logDir           the path to the directory where all log files will be stored
+     *                         occurred when processing the job
+     * @param gridSharedFolder the path to the primary directory from properties, where log and working directories
+     *                         should be stored
      * @see JobProvider
      */
 
-    public JobOperationProviderService(final JobProvider jobProvider, @Value("${job.log.dir}") final String logDir) {
+    public JobOperationProviderService(final JobProvider jobProvider,
+                                       @Value("${job.log.dir}") final String logDir,
+                                       @Value("${grid.engine.shared.folder}")
+                                       final String gridSharedFolder) {
         this.jobProvider = jobProvider;
-        this.logDir = logDir;
+        this.logDir = DirectoryPathUtils.resolvePathToAbsolute(gridSharedFolder, logDir).toString();
+        this.gridSharedFolder = gridSharedFolder;
     }
 
     /**
@@ -89,6 +98,15 @@ public class JobOperationProviderService {
      * @return Running job.
      */
     public Job runJob(final JobOptions options) {
+        Optional.ofNullable(options.getWorkingDir()).ifPresent(workingDir -> {
+            final String workingDirAbsolutePath = DirectoryPathUtils
+                    .resolvePathToAbsolute(gridSharedFolder, workingDir)
+                    .toString();
+            if (!workingDir.equals(workingDirAbsolutePath)) {
+                options.setWorkingDir(workingDirAbsolutePath);
+                log.info("Working directory was changed from " + workingDir + " to " + workingDirAbsolutePath);
+            }
+        });
         return jobProvider.runJob(options);
     }
 
