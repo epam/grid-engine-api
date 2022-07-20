@@ -130,7 +130,7 @@ public class SlurmJobProvider implements JobProvider {
         this.commandCompiler = commandCompiler;
         this.fieldsCount = fieldsCount;
         this.jobIdNotFoundMessage = jobIdNotFoundMessage;
-        this.logDir = DirectoryPathUtils.buildProperDir(gridSharedFolder, logDir).toString();
+        this.logDir = DirectoryPathUtils.resolvePathToAbsolute(gridSharedFolder, logDir).toString();
     }
 
     @Override
