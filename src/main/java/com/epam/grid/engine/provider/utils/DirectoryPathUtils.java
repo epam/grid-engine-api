@@ -69,7 +69,7 @@ public final class DirectoryPathUtils {
                 log.info("Directory with path " + folderToCreate + " was created.");
                 try {
                     grantAllPermissionsToFolder(folderToCreate);
-                } catch (IOException ioException) {
+                } catch (final IOException ioException) {
                     throw new IllegalArgumentException("Failed to grant permissions to the path " + folderToCreate,
                             ioException);
                 }
