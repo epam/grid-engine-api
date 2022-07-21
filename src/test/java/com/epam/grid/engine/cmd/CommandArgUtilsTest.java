@@ -57,6 +57,9 @@ class CommandArgUtilsTest {
                 Arguments.of("\"\\\" \t some test argument \\\"\"",
                         new String[]{"\" \t some test argument \""}),
 
+                Arguments.of(" \"\"  \"should pass only one token\"",
+                        new String[]{"should pass only one token"}),
+
                 Arguments.of("sbatch --export\n\n    \n    \n        \"ALL,additionalProp1=\\\"a value with spaces\\"
                                 + "\",additionalProp2=\\\"a value with \\\"quotes and spaces\\\"\\\",additionalProp3"
                                 + "=\\\"a value with \\\\\"an escaped quotes\\\\\"\\\"\"\n    \n\n\n\n\n    --job-na"
