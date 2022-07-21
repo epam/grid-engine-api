@@ -76,7 +76,7 @@ public class CommandArgUtils {
         int backslashes = 0;
 
         for (final char ch : command.toCharArray()) {
-            if (ch == QUOTE && token.length() == 0 && backslashes == 0) {
+            if (!isQuote && ch == QUOTE && token.length() == 0) {
                 isQuote = true;
             } else {
                 if (isQuote) {
@@ -110,8 +110,8 @@ public class CommandArgUtils {
             }
         }
 
-        result.add(token.toString().trim());
-        return result.stream().filter(t -> !t.isEmpty()).toArray(String[]::new);
+        result.add(token.toString());
+        return result.stream().map(String::trim).filter(t -> !t.isEmpty()).toArray(String[]::new);
     }
 
     private static boolean isWhitespaceCharacter(final char ch) {
