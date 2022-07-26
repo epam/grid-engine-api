@@ -365,6 +365,10 @@ public class SgeJobProvider implements JobProvider {
         if (!checkParallelEnvOptions(options.getParallelEnvOptions())) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Invalid PE specification!");
         }
+        if (options.getParallelExecutionOptions() != null) {
+            throw new UnsupportedOperationException("ParallelExecutionOptions can be used only for SLURM grid engine. "
+                    + "For SGE engine please use ParallelEnvOptions");
+        }
     }
 
     private boolean checkParallelEnvOptions(final ParallelEnvOptions options) {

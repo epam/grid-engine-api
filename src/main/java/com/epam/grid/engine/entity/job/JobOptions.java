@@ -76,4 +76,8 @@ public class JobOptions {
      * List of arguments for the command being processed.
      */
     private List<String> arguments;
+    /**
+     * Specific slurm parallel environment settings.
+     */
+    private ParallelExecutionOptions parallelExecutionOptions;
 }

@@ -28,6 +28,15 @@ sbatch --export
 [# th:if="${options.workingDir != null}"]
     --chdir=[(${options.workingDir})]
 [/]
+[# th:if="${options.ParallelExecutionOptions != null}"]
+    --ntasks=[(${options.ParallelExecutionOptions.numTasks})]
+    --nodes=[(${options.ParallelExecutionOptions.nodes})]
+    --cpus-per-task=[(${options.ParallelExecutionOptions.cpusPerTask})]
+    --ntasks-per-node=[(${options.ParallelExecutionOptions.numTasksPerNode})]
+    [# th:if="${options.ParallelExecutionOptions.exclusive}"]
+        --exclusive
+    [/]
+[/]
 [# th:if="${options.canBeBinary}"]
     "--wrap=[(${binaryCommand})]"
 [/]
