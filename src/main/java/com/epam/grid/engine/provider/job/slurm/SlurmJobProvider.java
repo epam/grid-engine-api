@@ -33,6 +33,7 @@ import com.epam.grid.engine.entity.job.JobState;
 import com.epam.grid.engine.entity.job.DeletedJobInfo;
 import com.epam.grid.engine.entity.job.JobLogInfo;
 import com.epam.grid.engine.entity.job.DeleteJobFilter;
+import com.epam.grid.engine.entity.job.ParallelExecutionOptions;
 import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.mapper.job.slurm.SlurmJobMapper;
 import com.epam.grid.engine.provider.job.JobProvider;
@@ -244,10 +245,16 @@ public class SlurmJobProvider implements JobProvider {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Command should be specified!");
         }
         if (options.getPriority() != null && (options.getPriority() < 0 || options.getPriority() > MAX_SENT_PRIORITY)) {
-            throw new GridEngineException(HttpStatus.BAD_REQUEST, "Priority should be between 0 and 4_294_967_294");
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, "Priority should be between 0 and "
+                    + MAX_SENT_PRIORITY);
         }
         if (options.getParallelEnvOptions() != null) {
-            throw new UnsupportedOperationException("Parallel environment variables are not supported yet!");
+            throw new UnsupportedOperationException("Unsupported option was specified, for SLURM engine please "
+                    + "use ParallelExecutionOptions");
+        }
+        if (checkParallelExecutionOptions(options.getParallelExecutionOptions())) {
+            throw new UnsupportedOperationException("All Parallel execution options except Exclusive should be "
+                    + "greater than 0!");
         }
     }
 
@@ -332,5 +339,17 @@ public class SlurmJobProvider implements JobProvider {
                 .findFirst()
                 .orElseThrow(() -> new GridEngineException(HttpStatus.NOT_FOUND,
                         String.format("Id specified in %d for job removal not found!", id)));
+    }
+
+    private boolean checkParallelExecutionOptions(final ParallelExecutionOptions parallelExecutionOptions) {
+        return parallelExecutionOptions != null
+                && (isNotPositive(parallelExecutionOptions.getNumTasks())
+                || isNotPositive(parallelExecutionOptions.getNodes())
+                || isNotPositive(parallelExecutionOptions.getCpusPerTask())
+                || isNotPositive(parallelExecutionOptions.getNumTasksPerNode()));
+    }
+
+    private boolean isNotPositive(final int intToCheck) {
+        return intToCheck < 1;
     }
 }
