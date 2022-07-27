@@ -29,11 +29,10 @@ RUN set -ex \
        bash-completion \
        vim-enhanced \
     && yum clean all \
-    && rm -rf /var/cache/yum
-    
-RUN ln -s /usr/bin/python3.4 /usr/bin/python3
-
-RUN pip install Cython nose && pip3.4 install Cython nose
+    && rm -rf /var/cache/yum \
+    && ln -s /usr/bin/python3.4 /usr/bin/python3 \
+    && pip install Cython nose \
+    && pip3.4 install Cython nose
 
 RUN set -ex \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64" \
@@ -65,8 +64,10 @@ RUN set -x \
         /var/run/slurmd \
         /var/run/slurmdbd \
         /var/lib/slurmd \
-        /var/log/slurm \
+        /mnt/grid-engine-api \
+        /mnt/grid-engine-api/logs \
         /data \
+    && ln -s /mnt/grid-engine-api/logs /var/log/slurm \
     && touch /var/lib/slurmd/node_state \
         /var/lib/slurmd/front_end_state \
         /var/lib/slurmd/job_state \

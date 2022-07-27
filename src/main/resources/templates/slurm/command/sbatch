@@ -18,15 +18,12 @@ sbatch --export
 [# th:if="${options.priority != null && options.priority != 0}"]
     --priority=[(${options.priority})]
 [/]
-[# th:if="${options.name != null}"]
+[# th:if="${not #strings.isEmpty(options.name)}"]
     --job-name=[(${options.name})]
 [/]
 [# th:if="${not #lists.isEmpty(options.queues)}"]
     --partition=[# th:text="${#strings.listJoin(options.queues, ',')}"]
     [/]
-[/]
-[# th:if="${options.workingDir != null}"]
-    --chdir=[(${options.workingDir})]
 [/]
 [# th:if="${options.ParallelExecutionOptions != null}"]
     --ntasks=[(${options.ParallelExecutionOptions.numTasks})]
@@ -37,6 +34,11 @@ sbatch --export
         --exclusive
     [/]
 [/]
+[# th:if="${not #strings.isEmpty(options.workingDir)}"]
+    --chdir=[(${options.workingDir})]
+[/]
+-e [(${logDir})]/%A.err
+-o [(${logDir})]/%A.out
 [# th:if="${options.canBeBinary}"]
     "--wrap=[(${binaryCommand})]"
 [/]

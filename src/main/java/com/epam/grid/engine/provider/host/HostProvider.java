@@ -22,14 +22,14 @@ package com.epam.grid.engine.provider.host;
 import com.epam.grid.engine.entity.HostFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.host.Host;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 /**
  * This is an interface that provides requirements to different grid engine host providers.
  *
- * @see GridProviderAware
+ * @see CommandTypeAware
  */
-public interface HostProvider extends GridProviderAware {
+public interface HostProvider extends CommandTypeAware {
 
     /**
      * Lists all available hosts considering filtering parameters.

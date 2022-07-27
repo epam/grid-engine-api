@@ -38,7 +38,7 @@ public class JobLogInfo {
     /**
      * The job index in Grid engine.
      */
-    private int jobId;
+    private long jobId;
     /**
      * The type index in Grid engine.
      */

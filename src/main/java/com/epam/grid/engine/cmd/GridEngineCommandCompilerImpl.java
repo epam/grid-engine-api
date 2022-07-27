@@ -19,7 +19,7 @@
 
 package com.epam.grid.engine.cmd;
 
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.exception.GridEngineException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,45 +51,48 @@ public class GridEngineCommandCompilerImpl implements GridEngineCommandCompiler 
     /**
      * This method creates the command structure by engine type and context.
      *
-     * @param engineType A grid engine type.
+     * @param commandType A command type.
      * @param command    Name of the command used.
      * @param context    Data for forming a command.
      * @return The structure of the command execution.
      */
     @Override
-    public String[] compileCommand(final EngineType engineType, final String command,
+    public String[] compileCommand(final CommandType commandType, final String command,
                                    final IContext context) {
-        final String commandFolderPath = Paths.get(getPathByEngineType(engineType), COMMAND_PATH, command).toString();
+        final String commandFolderPath = Paths.get(getPathByEngineType(commandType), COMMAND_PATH, command).toString();
         return CommandArgUtils.splitCommandIntoArgs(templateEngine.process(commandFolderPath, context));
     }
 
     /**
      * Configures temporary file with entity information by engine type and context.
      *
-     * @param engineType A grid engine type.
+     * @param commandType A command type.
      * @param entity     Name of the entity used.
      * @param context    Structure with data for forming a template file.
      * @return Path to temporary file.
      */
     @Override
-    public Path compileEntityConfigFile(final EngineType engineType, final String entity, final IContext context) {
-        final String commandFolderPath = Paths.get(getPathByEngineType(engineType), ENTITY_PATH, entity).toString();
+    public Path compileEntityConfigFile(final CommandType commandType, final String entity, final IContext context) {
+        final String commandFolderPath = Paths.get(getPathByEngineType(commandType), ENTITY_PATH, entity).toString();
         final String entityDescription = templateEngine.process(commandFolderPath, context);
         return writeEntityDescriptionToTemporaryFile(entityDescription);
     }
 
-    private String getPathByEngineType(final EngineType engineType) {
+    private String getPathByEngineType(final CommandType commandType) {
         final String path;
-        switch (engineType) {
+        switch (commandType) {
             case SGE:
                 path = "sge";
                 break;
             case SLURM:
                 path = "slurm";
                 break;
+            case COMMON:
+                path = "common";
+                break;
             default:
                 throw new GridEngineException(HttpStatus.NO_CONTENT,
-                        String.format("Engine type %s is not supported", engineType));
+                        String.format("Command type %s is not supported", commandType));
         }
         return path;
     }

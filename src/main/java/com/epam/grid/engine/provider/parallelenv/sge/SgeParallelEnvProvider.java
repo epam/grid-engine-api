@@ -21,7 +21,7 @@ package com.epam.grid.engine.provider.parallelenv.sge;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.EntitiesRawOutput;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
@@ -122,11 +122,11 @@ public class SgeParallelEnvProvider implements ParallelEnvProvider {
      * This method tells what grid engine is used.
      *
      * @return Type of grid engine
-     * @see EngineType
+     * @see CommandType
      */
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SGE;
+    public CommandType getProviderType() {
+        return CommandType.SGE;
     }
 
     /**

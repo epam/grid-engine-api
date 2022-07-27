@@ -22,16 +22,16 @@ package com.epam.grid.engine.provider.parallelenv;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
 import com.epam.grid.engine.entity.parallelenv.PeRegistrationVO;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 import java.util.List;
 
 /**
  * This is an interface that provides requirements to different grid engine PE providers.
  *
- * @see GridProviderAware
+ * @see CommandTypeAware
  */
-public interface ParallelEnvProvider extends GridProviderAware {
+public interface ParallelEnvProvider extends CommandTypeAware {
 
     /**
      * Lists all available PE considering filtering parameters.

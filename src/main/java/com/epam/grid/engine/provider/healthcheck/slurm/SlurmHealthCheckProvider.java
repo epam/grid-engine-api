@@ -21,7 +21,7 @@ package com.epam.grid.engine.provider.healthcheck.slurm;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
 import com.epam.grid.engine.provider.utils.slurm.healthcheck.ShowConfigCommandParser;
@@ -48,11 +48,11 @@ public class SlurmHealthCheckProvider implements HealthCheckProvider {
      * This method tells which grid engine is used.
      *
      * @return Type of grid engine
-     * @see EngineType
+     * @see CommandType
      */
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SLURM;
+    public CommandType getProviderType() {
+        return CommandType.SLURM;
     }
 
     /**

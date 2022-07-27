@@ -20,14 +20,14 @@
 package com.epam.grid.engine.provider.healthcheck;
 
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 /**
  * The interface that defines an API providing information about the state of the cluster.
  * This interface should be implemented by specific grid engine provider.
- * @see GridProviderAware
+ * @see CommandTypeAware
  */
-public interface HealthCheckProvider extends GridProviderAware {
+public interface HealthCheckProvider extends CommandTypeAware {
 
     /**
      * Describes state of the cluster.

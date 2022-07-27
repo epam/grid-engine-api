@@ -22,7 +22,7 @@ package com.epam.grid.engine.provider.host.slurm;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.HostFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.host.Host;
@@ -59,8 +59,8 @@ public class SlurmHostProvider implements HostProvider {
     private final SlurmHostMapper slurmHostMapper;
 
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SLURM;
+    public CommandType getProviderType() {
+        return CommandType.SLURM;
     }
 
     @Override

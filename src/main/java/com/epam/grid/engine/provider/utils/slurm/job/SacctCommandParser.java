@@ -39,16 +39,16 @@ import static com.epam.grid.engine.utils.TextConstants.COMMA;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SacctCommandParser {
 
+    private static final int JOB_DESCRIPTION_PARAMETERS_AMOUNT = 52;
     private static final String STANDARD_SLURM_DELIMETER = "\\|";
     private static final String FAILED_TO_PARSE_JOB_DATA = "failed to parse job data";
     private static final String SLURM_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
-    public static List<String> parseSlurmJob(final String jobString,
-                                             final int fieldsCount) {
+    public static List<String> parseSlurmJob(final String jobString) {
         final String[] jobArray = jobString.split(STANDARD_SLURM_DELIMETER);
-        if (jobArray.length != fieldsCount) {
+        if (jobArray.length != JOB_DESCRIPTION_PARAMETERS_AMOUNT) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Job data field mismatch error. Expected "
-                    + fieldsCount + " fields, but " + jobArray.length + " were provided");
+                    + JOB_DESCRIPTION_PARAMETERS_AMOUNT + " fields, but " + jobArray.length + " were provided");
         }
         return Arrays.stream(jobArray).collect(Collectors.toList());
     }

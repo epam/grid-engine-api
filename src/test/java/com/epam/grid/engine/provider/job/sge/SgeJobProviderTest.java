@@ -23,13 +23,12 @@ import com.epam.grid.engine.cmd.CmdExecutor;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.JobFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.job.DeleteJobFilter;
 import com.epam.grid.engine.entity.job.DeletedJobInfo;
 import com.epam.grid.engine.entity.job.Job;
-import com.epam.grid.engine.entity.job.JobLogInfo;
 import com.epam.grid.engine.entity.job.JobOptions;
 import com.epam.grid.engine.entity.job.JobState;
 import com.epam.grid.engine.entity.job.ParallelEnvOptions;
@@ -44,7 +43,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -70,8 +68,6 @@ public class SgeJobProviderTest {
 
     private static final String QSTAT_COMMAND = "qstat";
     private static final String QDEL_COMMAND = "qdel";
-    private static final String GET_LOG_LINES_COMMAND = "get_log_lines";
-    private static final String GET_LOGFILE_INFO_COMMAND = "get_logfile_info";
     private static final String FORCED_QDEL = "-f";
     private static final String USER_QDEL = "-u";
     private static final String STATE = "-s";
@@ -93,6 +89,7 @@ public class SgeJobProviderTest {
     private static final String SOME_RUNNING_STATUS_CODE = "r";
     private static final String TEST_QUEUE = "test_queue";
     private static final String JOB_COMMAND = "simple.sh";
+    private static final String SOME_JOB_LOG_DIRECTORY_PATH = "/mnt/logs";
 
     private static final String TEXT_JOB_SUBMITTED = "Your job 7 (\"demo_v.sh\") has been submitted";
 
@@ -102,14 +99,6 @@ public class SgeJobProviderTest {
     private static final String SOME_JOB_NAME_2 = "favoriteJob";
     private static final List<String> NAME = Collections.singletonList(SOME_JOB_NAME_1);
     private static final List<Long> ID = Collections.singletonList(7L);
-
-    private static final int SOME_JOB_ID = 10;
-    private static final int SOME_LINES = 10;
-    private static final int SOME_BYTES = 150;
-    private static final JobLogInfo.Type SOME_LOG_TYPE = JobLogInfo.Type.ERR;
-    private static final String LOG_FILE_NAME = String.format("%d.%s", SOME_JOB_ID, SOME_LOG_TYPE.getSuffix());
-    private static final List<String> INFO_COMMAND_RESULT_STDOUT = Collections.singletonList(
-            String.format("%d %d %s", SOME_LINES, SOME_BYTES, LOG_FILE_NAME));
 
     private static final String VALID_XML = "<?xml version='1.0'?>\n"
             + "<job_info  xmlns:xsd="
@@ -237,7 +226,7 @@ public class SgeJobProviderTest {
                 .build();
 
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
-        Assertions.assertEquals(EngineType.SGE, sgeJobProvider.getProviderType());
+        Assertions.assertEquals(CommandType.SGE, sgeJobProvider.getProviderType());
         final JobFilter jobFilter = new JobFilter();
         final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
                 sgeJobProvider.filterJobs(jobFilter));
@@ -256,7 +245,7 @@ public class SgeJobProviderTest {
         final List<Job> result = sgeJobProvider.filterJobs(new JobFilter()).getElements();
 
         Assertions.assertEquals(0, result.size());
-        Assertions.assertEquals(EngineType.SGE, sgeJobProvider.getProviderType());
+        Assertions.assertEquals(CommandType.SGE, sgeJobProvider.getProviderType());
     }
 
     @Test
@@ -401,27 +390,17 @@ public class SgeJobProviderTest {
     @MethodSource("provideInvalidJobOptions")
     public void shouldThrowExceptionMakingQsubCommand(final JobOptions jobOptions) {
         final Throwable thrown = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.runJob(jobOptions));
+                () -> sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH));
         Assertions.assertNotNull(thrown.getMessage());
     }
 
     static Stream<Arguments> provideInvalidJobOptions() {
         return Stream.of(
-                Arguments.of(JobOptions.builder().command(null).build()),
-                Arguments.of(JobOptions.builder().command(EMPTY_STRING).build()),
                 Arguments.of(JobOptions.builder().parallelEnvOptions(new ParallelEnvOptions(EMPTY_STRING, 1, 100))
                         .command(JOB_COMMAND).build()),
                 Arguments.of(JobOptions.builder().parallelEnvOptions(new ParallelEnvOptions(null, 1, 100))
                         .command(JOB_COMMAND).build())
         );
-    }
-
-    @Test
-    public void shouldThrowsExceptionBecauseNoCommand() {
-        final JobOptions jobOptions = new JobOptions();
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
-                sgeJobProvider.runJob(jobOptions));
-        Assertions.assertNotNull(thrown.getMessage());
     }
 
     @Test
@@ -431,7 +410,7 @@ public class SgeJobProviderTest {
         jobOptions.setParallelExecutionOptions(ParallelExecutionOptions.builder().numTasks(1).numTasksPerNode(1)
                 .cpusPerTask(1).nodes(1).build());
         final Throwable thrown = Assertions.assertThrows(UnsupportedOperationException.class, () ->
-                sgeJobProvider.runJob(jobOptions));
+                sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH));
         Assertions.assertNotNull(thrown.getMessage());
     }
 
@@ -447,7 +426,7 @@ public class SgeJobProviderTest {
         commandResult.setStdErr(EMPTY_LIST);
 
         mockCommandCompilation(QSUB, commandResult, command);
-        final Job result = sgeJobProvider.runJob(jobOptions);
+        final Job result = sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH);
 
         Assertions.assertEquals(expectedFilteredJob.getId(), result.getId());
     }
@@ -473,7 +452,7 @@ public class SgeJobProviderTest {
         commandResult.setStdErr(EMPTY_LIST);
 
         mockCommandCompilation(QSUB, commandResult, QSUB, COMMAND_SCRIPT_FILE);
-        final Job result = sgeJobProvider.runJob(jobOptions);
+        final Job result = sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH);
 
         Assertions.assertEquals(expectedFilteredJob, result);
     }
@@ -615,32 +594,10 @@ public class SgeJobProviderTest {
 
     private void mockCommandCompilation(final String command, final CommandResult commandResult,
                                         final String... compiledArray) {
-        doReturn(compiledArray).when(commandCompiler).compileCommand(Mockito.eq(EngineType.SGE),
+        doReturn(compiledArray).when(commandCompiler).compileCommand(Mockito.eq(CommandType.SGE),
                 Mockito.matches(command),
                 Mockito.any());
         doReturn(commandResult).when(mockCmdExecutor).execute(compiledArray);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideWrongDeleteRequests")
-    public void shouldThrowsExceptionDuringDeletionBecauseNotCorrectRequest(final boolean isForce, final Long id,
-                                                                            final String user) {
-        final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
-                .force(isForce)
-                .id(id)
-                .user(user)
-                .build();
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
-                sgeJobProvider.deleteJob(deleteJobFilter));
-        Assertions.assertNotNull(thrown.getMessage());
-    }
-
-    static Stream<Arguments> provideWrongDeleteRequests() {
-        return Stream.of(
-                Arguments.of(false, 0L, SGEUSER),
-                Arguments.of(true, null, EMPTY_STRING),
-                Arguments.of(false, null, null)
-        );
     }
 
     @ParameterizedTest
@@ -722,64 +679,5 @@ public class SgeJobProviderTest {
                         .build())
                 .build();
         return Arrays.asList(running, pending, suspended);
-    }
-
-    @Test
-    void shouldReturnCorrectObjectWhenGettingJobLogInfo() {
-        final List<String> testStdOut = Collections.singletonList("Test line for StdOut.");
-        final JobLogInfo expectedJobLogInfo = new JobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE,
-                testStdOut, SOME_LINES, SOME_BYTES);
-
-        final CommandResult infoCommandResult = new CommandResult();
-        infoCommandResult.setStdOut(INFO_COMMAND_RESULT_STDOUT);
-        infoCommandResult.setStdErr(EMPTY_LIST);
-
-        final CommandResult linesCommandResult = new CommandResult();
-        linesCommandResult.setStdOut(testStdOut);
-        linesCommandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(GET_LOGFILE_INFO_COMMAND, infoCommandResult, "wc", "-l", "-c", LOG_FILE_NAME);
-        mockCommandCompilation(GET_LOG_LINES_COMMAND, linesCommandResult, "tail", "-n", "1", LOG_FILE_NAME);
-
-        final JobLogInfo result = sgeJobProvider.getJobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE, 1, false);
-        Assertions.assertEquals(expectedJobLogInfo, result);
-    }
-
-    @Test
-    void shouldTrowsExceptionWhenGettingJobLogInfoWithBadRequest() {
-        final int someBadCountLines = -5;
-        final GridEngineException thrown = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.getJobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE, someBadCountLines, false));
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, thrown.getHttpStatus());
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideCommandResultsForGettingJobLogInfoTesting")
-    void shouldTrowsExceptionWhenGettingJobLogInfoWhenReceivedBadCommandResult(
-            final int infoCommandResultStatus,
-            final int linesCommandResultStatus,
-            final List<String> infoCommandResultStdOut,
-            final HttpStatus expectedHttpStatus) {
-        final CommandResult infoCommandResult = new CommandResult();
-        infoCommandResult.setStdOut(infoCommandResultStdOut);
-        infoCommandResult.setExitCode(infoCommandResultStatus);
-
-        final CommandResult linesCommandResult = new CommandResult();
-        linesCommandResult.setExitCode(linesCommandResultStatus);
-
-        mockCommandCompilation(GET_LOGFILE_INFO_COMMAND, infoCommandResult, "wc", "-l", "-c", LOG_FILE_NAME);
-        mockCommandCompilation(GET_LOG_LINES_COMMAND, linesCommandResult, "tail", "-n", "1", LOG_FILE_NAME);
-
-        final GridEngineException result = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.getJobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE, 1, false));
-        Assertions.assertEquals(expectedHttpStatus, result.getHttpStatus());
-    }
-
-    static Stream<Arguments> provideCommandResultsForGettingJobLogInfoTesting() {
-        return Stream.of(
-                Arguments.of(0, 1, INFO_COMMAND_RESULT_STDOUT, HttpStatus.NOT_FOUND),
-                Arguments.of(1, 0, INFO_COMMAND_RESULT_STDOUT, HttpStatus.NOT_FOUND),
-                Arguments.of(1, 1, INFO_COMMAND_RESULT_STDOUT, HttpStatus.NOT_FOUND),
-                Arguments.of(0, 0, Collections.singletonList(LOG_FILE_NAME), HttpStatus.INTERNAL_SERVER_ERROR));
     }
 }
