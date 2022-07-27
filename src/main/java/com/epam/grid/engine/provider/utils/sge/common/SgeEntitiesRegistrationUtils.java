@@ -20,7 +20,7 @@
 package com.epam.grid.engine.provider.utils.sge.common;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.exception.GridEngineException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -43,7 +43,7 @@ public final class SgeEntitiesRegistrationUtils {
         final Context context = new Context();
         context.setVariable(TEMP_FILE_FIELD, pathToDescription.toFile().getAbsolutePath()
                 .replaceAll("\\\\", "//"));
-        return commandCompiler.compileCommand(EngineType.SGE, command, context);
+        return commandCompiler.compileCommand(CommandType.SGE, command, context);
     }
 
     public static void deleteTemporaryDescriptionFile(final Path path) {

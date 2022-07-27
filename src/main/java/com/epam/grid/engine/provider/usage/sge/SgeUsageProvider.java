@@ -22,7 +22,7 @@ package com.epam.grid.engine.provider.usage.sge;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.usage.UsageReport;
 import com.epam.grid.engine.entity.usage.UsageReportFilter;
 import com.epam.grid.engine.provider.usage.UsageProvider;
@@ -104,8 +104,8 @@ public class SgeUsageProvider implements UsageProvider {
      * @return the engine type
      */
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SGE;
+    public CommandType getProviderType() {
+        return CommandType.SGE;
     }
 
     private String parseTime(final LocalDateTime dateTime) {

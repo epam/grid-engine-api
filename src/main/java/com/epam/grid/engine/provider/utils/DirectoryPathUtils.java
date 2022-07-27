@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DirectoryPathUtils {
+
     private static final String ALL_PERMISSIONS_STRING = "rwxrw-rw-";
 
     /**
@@ -48,7 +49,7 @@ public final class DirectoryPathUtils {
      * @return Adjusted directory path with added primary directory added if needed
      */
 
-    public static Path resolvePathToAbsolute(final String root, final String path) {
+    public static String resolvePathToAbsolute(final String root, final String path) {
         Path processingPath = Path.of(path);
         if (processingPath.isAbsolute()) {
             if (!path.startsWith(root)) {
@@ -60,7 +61,7 @@ public final class DirectoryPathUtils {
             log.info("Nested folder path was changed to " + processingPath);
         }
         checkIfFolderNotExistsAndCreate(processingPath);
-        return processingPath;
+        return processingPath.toString();
     }
 
     private static void checkIfFolderNotExistsAndCreate(final Path folderToCreate) {

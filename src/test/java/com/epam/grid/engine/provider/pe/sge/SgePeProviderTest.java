@@ -21,7 +21,7 @@ package com.epam.grid.engine.provider.pe.sge;
 
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.AllocationRuleType;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
@@ -131,7 +131,7 @@ public class SgePeProviderTest {
 
         final List<ParallelEnv> resultPE = sgePeProvider.listParallelEnv(peFilter);
 
-        Assertions.assertEquals(EngineType.SGE, sgePeProvider.getProviderType());
+        Assertions.assertEquals(CommandType.SGE, sgePeProvider.getProviderType());
         Assertions.assertEquals(resultPE.get(0), makePe);
     }
 
@@ -158,7 +158,7 @@ public class SgePeProviderTest {
         parallelEnvFilter.setParallelEnvs(List.of(MAKE));
         final List<ParallelEnv> resultPE = sgePeProvider.listParallelEnv(parallelEnvFilter);
 
-        Assertions.assertEquals(EngineType.SGE, sgePeProvider.getProviderType());
+        Assertions.assertEquals(CommandType.SGE, sgePeProvider.getProviderType());
         Assertions.assertEquals(resultPE.get(0), makePe);
     }
 
@@ -191,7 +191,7 @@ public class SgePeProviderTest {
         doReturn(commandResult).when(mockCmdExecutor).execute(QCONF, SP, MAKE);
 
         final ParallelEnv resultPE = sgePeProvider.getParallelEnv(MAKE);
-        Assertions.assertEquals(EngineType.SGE, sgePeProvider.getProviderType());
+        Assertions.assertEquals(CommandType.SGE, sgePeProvider.getProviderType());
         Assertions.assertEquals(resultPE, expectedPe);
     }
 
@@ -249,7 +249,7 @@ public class SgePeProviderTest {
                 .execute(Mockito.matches(QCONF), Mockito.matches(AP), Mockito.anyString());
         final ParallelEnv actualPe = sgePeProvider.registerParallelEnv(registrationRequest);
 
-        Assertions.assertEquals(EngineType.SGE, sgePeProvider.getProviderType());
+        Assertions.assertEquals(CommandType.SGE, sgePeProvider.getProviderType());
         Assertions.assertEquals(expectedPe.getName(), actualPe.getName());
         Assertions.assertEquals(expectedPe.getSlots(), actualPe.getSlots());
         Assertions.assertEquals(expectedPe.getAllocationRule(), actualPe.getAllocationRule());

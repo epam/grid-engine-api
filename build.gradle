@@ -57,6 +57,11 @@ dependencies {
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitPlatformVersion"
     testRuntimeOnly "org.junit.platform:junit-platform-commons:$junitPlatformVersion"
 
+    /* Mockito */
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito:mockito-inline:$mockitoVersion"
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
+
     /* Collection4 */
     implementation "org.apache.commons:commons-collections4:$commonsVersion"
     implementation "commons-io:commons-io:$commonsIOVersions"
@@ -65,8 +70,8 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion"
 
     /* MapStruct */
-    compileOnly "org.mapstruct:mapstruct:$mapStructVersion"
-    testCompileOnly "org.mapstruct:mapstruct:$mapStructVersion"
+    implementation "org.mapstruct:mapstruct:$mapStructVersion"
+    testImplementation "org.mapstruct:mapstruct:$mapStructVersion"
     annotationProcessor "org.mapstruct:mapstruct-processor:$mapStructVersion"
 
     /* Swagger2Markup */
@@ -85,8 +90,11 @@ checkstyle {
 }
 
 jacoco {
-    toolVersion = "0.8.7"
-    reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+    toolVersion = "0.8.8"
+}
+
+jar {
+    enabled = false
 }
 
 test {

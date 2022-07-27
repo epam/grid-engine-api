@@ -19,7 +19,7 @@
 
 package com.epam.grid.engine.provider.parallelenv.slurm;
 
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
 import com.epam.grid.engine.entity.parallelenv.PeRegistrationVO;
@@ -61,7 +61,7 @@ public class SlurmParallelEnvProvider implements ParallelEnvProvider {
     }
 
     @Override
-    public EngineType getProviderType() {
+    public CommandType getProviderType() {
         throw new UnsupportedOperationException("Parallel environment provider cannot be used in SLURM engine. To set "
                 + "parallel environment options please use ParallelExecutionOptions");
     }

@@ -21,7 +21,7 @@ package com.epam.grid.engine.provider.hostgroup;
 
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
 import com.epam.grid.engine.entity.HostGroupFilter;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ import java.util.List;
  * The interface which provides methods for different
  * types of grid engines to operate with {@link HostGroup}.
  */
-public interface HostGroupProvider extends GridProviderAware {
+public interface HostGroupProvider extends CommandTypeAware {
 
     /**
      * Returns a List containing specified {@link HostGroup}s with respect to provided {@link HostGroupFilter}.

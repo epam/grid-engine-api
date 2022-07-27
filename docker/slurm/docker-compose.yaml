@@ -25,7 +25,7 @@ services:
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
-      - var_log_slurm:/var/log/slurm
+      - var_log_slurm:/mnt/grid-engine-api/logs
     expose:
       - "6819"
     depends_on:
@@ -47,7 +47,7 @@ services:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
-      - var_log_slurm:/var/log/slurm
+      - var_log_slurm:/mnt/grid-engine-api/logs
     expose:
       - "6817"
       - "8080"
@@ -67,7 +67,7 @@ services:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
-      - var_log_slurm:/var/log/slurm
+      - var_log_slurm:/mnt/grid-engine-api/logs
     expose:
       - "6818"
     depends_on:
@@ -82,7 +82,7 @@ services:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
-      - var_log_slurm:/var/log/slurm
+      - var_log_slurm:/mnt/grid-engine-api/logs
     expose:
       - "6818"
     depends_on:

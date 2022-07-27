@@ -22,7 +22,7 @@ package com.epam.grid.engine.provider.queue;
 import com.epam.grid.engine.entity.QueueFilter;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.QueueVO;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * The interface which provides methods for different
  * types of grid engines to operate with {@link Queue}.
  */
-public interface QueueProvider extends GridProviderAware {
+public interface QueueProvider extends CommandTypeAware {
 
     /**
      * Returns a List containing Queues.

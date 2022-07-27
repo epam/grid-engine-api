@@ -22,7 +22,7 @@ package com.epam.grid.engine.provider.hostgroup.sge;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
 import com.epam.grid.engine.entity.hostgroup.sge.SgeHostGroup;
@@ -71,8 +71,8 @@ public class SgeHostGroupProvider implements HostGroupProvider {
      * @return the engine type - Sun Grid Engine
      */
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SGE;
+    public CommandType getProviderType() {
+        return CommandType.SGE;
     }
 
     /**

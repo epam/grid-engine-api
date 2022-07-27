@@ -22,13 +22,17 @@ package com.epam.grid.engine.entity;
 /**
  * This class contains enumeration of supported grid engines.
  */
-public enum EngineType {
+public enum CommandType {
     /**
-     * Sun Grig Engine.
+     * Sun Grig Engine commands.
      */
     SGE,
     /**
-     * SLURM.
+     * SLURM commands.
      */
-    SLURM
+    SLURM,
+    /**
+     * Common commands.
+     */
+    COMMON
 }

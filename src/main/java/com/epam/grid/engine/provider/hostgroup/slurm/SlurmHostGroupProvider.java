@@ -19,7 +19,7 @@
 
 package com.epam.grid.engine.provider.hostgroup.slurm;
 
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
 import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
@@ -37,8 +37,8 @@ import java.util.List;
 public class SlurmHostGroupProvider implements HostGroupProvider {
 
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SLURM;
+    public CommandType getProviderType() {
+        return CommandType.SLURM;
     }
 
     /**
