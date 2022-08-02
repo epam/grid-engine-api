@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.service;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.AllocationRuleType;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
@@ -26,13 +27,13 @@ import com.epam.grid.engine.entity.parallelenv.PeRegistrationVO;
 import com.epam.grid.engine.entity.parallelenv.RuleState;
 import com.epam.grid.engine.entity.parallelenv.UrgencyState;
 import com.epam.grid.engine.entity.parallelenv.UrgencyStateType;
-import com.epam.grid.engine.provider.parallelenv.sge.SgeParallelEnvProvider;
+import com.epam.grid.engine.provider.parallelenv.ParallelEnvProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +41,8 @@ import java.util.List;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class PeOperationProviderServiceTest {
 
     private static final String FIVE = "5";
@@ -52,8 +54,8 @@ public class PeOperationProviderServiceTest {
     @Autowired
     private ParallelEnvOperationProviderService parallelEnvOperationProviderService;
 
-    @SpyBean
-    private SgeParallelEnvProvider parallelEnvProvider;
+    @MockBean
+    private ParallelEnvProvider parallelEnvProvider;
 
     @Test
     public void shouldReturnCorrectPostResponse() {

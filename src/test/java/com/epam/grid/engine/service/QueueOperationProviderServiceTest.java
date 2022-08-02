@@ -19,16 +19,17 @@
 
 package com.epam.grid.engine.service;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.entity.QueueFilter;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.QueueVO;
-import com.epam.grid.engine.provider.queue.sge.SgeQueueProvider;
+import com.epam.grid.engine.provider.queue.QueueProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +37,8 @@ import java.util.List;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class QueueOperationProviderServiceTest {
 
     private static final String COMMAND_QCONF = "qconf";
@@ -48,8 +50,8 @@ public class QueueOperationProviderServiceTest {
     @Autowired
     QueueOperationProviderService queueOperationProviderService;
 
-    @SpyBean
-    SgeQueueProvider sgeQueueProvider;
+    @MockBean
+    QueueProvider queueProvider;
 
     @Test
     public void shouldReturnCorrectQueue() {
@@ -60,9 +62,9 @@ public class QueueOperationProviderServiceTest {
         final QueueFilter queueFilter = new QueueFilter();
         queueFilter.setQueues(List.of(COMMAND_QCONF, OPTION_SQ, TEST_QUEUE_NAME));
 
-        doReturn(queues).when(sgeQueueProvider).listQueues(queueFilter);
+        doReturn(queues).when(queueProvider).listQueues(queueFilter);
         Assertions.assertEquals(expectedQueue, queueOperationProviderService.listQueues(queueFilter).get(0));
-        Mockito.verify(sgeQueueProvider, times(1)).listQueues(queueFilter);
+        Mockito.verify(queueProvider, times(1)).listQueues(queueFilter);
     }
 
     @Test
@@ -72,9 +74,9 @@ public class QueueOperationProviderServiceTest {
                 .build();
         final List<Queue> queues = Collections.singletonList(expectedQueue);
 
-        doReturn(queues).when(sgeQueueProvider).listQueues();
+        doReturn(queues).when(queueProvider).listQueues();
         Assertions.assertEquals(expectedQueue, queueOperationProviderService.listQueues().get(0));
-        Mockito.verify(sgeQueueProvider, times(1)).listQueues();
+        Mockito.verify(queueProvider, times(1)).listQueues();
     }
 
     @Test
@@ -83,9 +85,9 @@ public class QueueOperationProviderServiceTest {
                 .name(TEST_MAIN_NAME)
                 .build();
 
-        doReturn(deletedQueue).when(sgeQueueProvider).deleteQueues(TEST_MAIN_NAME);
+        doReturn(deletedQueue).when(queueProvider).deleteQueues(TEST_MAIN_NAME);
         Assertions.assertEquals(deletedQueue, queueOperationProviderService.deleteQueue(TEST_MAIN_NAME));
-        Mockito.verify(sgeQueueProvider, times(1)).deleteQueues(TEST_MAIN_NAME);
+        Mockito.verify(queueProvider, times(1)).deleteQueues(TEST_MAIN_NAME);
     }
 
     @Test
@@ -99,8 +101,8 @@ public class QueueOperationProviderServiceTest {
                 .ownerList(Collections.singletonList(TEST_OWNER_LIST))
                 .build();
 
-        doReturn(updatedQueue).when(sgeQueueProvider).updateQueue(updateRequest);
+        doReturn(updatedQueue).when(queueProvider).updateQueue(updateRequest);
         Assertions.assertEquals(updatedQueue, queueOperationProviderService.updateQueue(updateRequest));
-        Mockito.verify(sgeQueueProvider, times(1)).updateQueue(updateRequest);
+        Mockito.verify(queueProvider, times(1)).updateQueue(updateRequest);
     }
 }

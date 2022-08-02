@@ -8,7 +8,7 @@
 |Name|Description|Schema|
 |---|---|---|
 |**force**  <br>*optional*|**Example** : `true`|boolean|
-|**id**  <br>*optional*|**Example** : `0`|integer (int64)|
+|**ids**  <br>*optional*|**Example** : `[ 0 ]`|< integer (int64) > array|
 |**user**  <br>*optional*|**Example** : `"string"`|string|
 
 
@@ -17,7 +17,7 @@
 
 |Name|Description|Schema|
 |---|---|---|
-|**id**  <br>*optional*|**Example** : `[ 0 ]`|< integer (int64) > array|
+|**id**  <br>*optional*|**Example** : `0`|integer (int64)|
 |**user**  <br>*optional*|**Example** : `"string"`|string|
 
 
@@ -79,7 +79,7 @@
 
 |Name|Description|Schema|
 |---|---|---|
-|**id**  <br>*optional*|**Example** : `0`|integer (int32)|
+|**id**  <br>*optional*|**Example** : `0`|integer (int64)|
 |**name**  <br>*optional*|**Example** : `"string"`|string|
 |**owner**  <br>*optional*|**Example** : `"string"`|string|
 |**priority**  <br>*optional*|**Example** : `0.0`|number (double)|
@@ -94,7 +94,7 @@
 
 |Name|Description|Schema|
 |---|---|---|
-|**ids**  <br>*optional*|**Example** : `[ 0 ]`|< integer (int32) > array|
+|**ids**  <br>*optional*|**Example** : `[ 0 ]`|< integer (int64) > array|
 |**names**  <br>*optional*|**Example** : `[ "string" ]`|< string > array|
 |**owners**  <br>*optional*|**Example** : `[ "string" ]`|< string > array|
 |**state**  <br>*optional*|**Example** : `"string"`|string|
@@ -106,7 +106,7 @@
 |Name|Description|Schema|
 |---|---|---|
 |**bytes**  <br>*optional*|**Example** : `0`|integer (int64)|
-|**jobId**  <br>*optional*|**Example** : `0`|integer (int32)|
+|**jobId**  <br>*optional*|**Example** : `0`|integer (int64)|
 |**lines**  <br>*optional*|**Example** : `[ "string" ]`|< string > array|
 |**totalCount**  <br>*optional*|**Example** : `0`|integer (int32)|
 |**type**  <br>*optional*|**Example** : `"string"`|enum (ERR, OUT)|
@@ -123,7 +123,8 @@
 |**envVariables**  <br>*optional*|**Example** : `{<br>  "string" : "string"<br>}`|< string, string > map|
 |**name**  <br>*optional*|**Example** : `"string"`|string|
 |**parallelEnvOptions**  <br>*optional*|**Example** : `"[parallelenvoptions](#parallelenvoptions)"`|[ParallelEnvOptions](definitions.md#parallelenvoptions)|
-|**priority**  <br>*optional*|**Example** : `0`|integer (int32)|
+|**parallelExecutionOptions**  <br>*optional*|**Example** : `"[parallelexecutionoptions](#parallelexecutionoptions)"`|[ParallelExecutionOptions](definitions.md#parallelexecutionoptions)|
+|**priority**  <br>*optional*|**Example** : `0`|integer (int64)|
 |**queues**  <br>*optional*|**Example** : `[ "string" ]`|< string > array|
 |**useAllEnvVars**  <br>*optional*|**Example** : `true`|boolean|
 |**workingDir**  <br>*optional*|**Example** : `"string"`|string|
@@ -137,6 +138,14 @@
 |**category**  <br>*optional*|**Example** : `"string"`|enum (DELETED, ERROR, FINISHED, PENDING, RUNNING, SUSPENDED, UNKNOWN)|
 |**state**  <br>*optional*|**Example** : `"string"`|string|
 |**stateCode**  <br>*optional*|**Example** : `"string"`|string|
+
+
+<a name="e3d7652c277fe76953ca5afe80955ec2"></a>
+### Listing«DeletedJobInfo»
+
+|Name|Description|Schema|
+|---|---|---|
+|**elements**  <br>*optional*|**Example** : `[ "[deletedjobinfo](#deletedjobinfo)" ]`|< [DeletedJobInfo](definitions.md#deletedjobinfo) > array|
 
 
 <a name="225c01981c26ed06907326b31323db01"></a>
@@ -189,6 +198,18 @@
 |**max**  <br>*optional*|**Example** : `0`|integer (int32)|
 |**min**  <br>*optional*|**Example** : `0`|integer (int32)|
 |**name**  <br>*optional*|**Example** : `"string"`|string|
+
+
+<a name="parallelexecutionoptions"></a>
+### ParallelExecutionOptions
+
+|Name|Description|Schema|
+|---|---|---|
+|**cpusPerTask**  <br>*optional*|**Example** : `0`|integer (int32)|
+|**exclusive**  <br>*optional*|**Example** : `true`|boolean|
+|**nodes**  <br>*optional*|**Example** : `0`|integer (int32)|
+|**numTasks**  <br>*optional*|**Example** : `0`|integer (int32)|
+|**numTasksPerNode**  <br>*optional*|**Example** : `0`|integer (int32)|
 
 
 <a name="peregistrationvo"></a>

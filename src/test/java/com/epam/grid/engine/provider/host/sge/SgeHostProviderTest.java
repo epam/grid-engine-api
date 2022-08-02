@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.provider.host.sge;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.HostFilter;
@@ -39,7 +40,8 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SINGLETON
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.TYPE_XML;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class SgeHostProviderTest {
 
     private static final String CORRECT_XML = "<?xml version='1.0'?>"

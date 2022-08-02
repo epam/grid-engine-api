@@ -103,6 +103,7 @@ public class GridEngineCommandCompilerImplTest {
     private static final String QMASTER_PORT_STRING = "qmasterPort";
     private static final String QMASTER_STRING = "qmaster";
     private static final String ONE = "1";
+    private static final long ONE_LONG = Long.parseLong(ONE);
     private static final String SOME_HOST = "someHost";
     private static final String SOME_HOST2 = "someHost2";
     private static final String CURRENT_HOSTS = "current_host";
@@ -699,16 +700,16 @@ public class GridEngineCommandCompilerImplTest {
     static Stream<Arguments> provideDeleteJobFilterAndExpectedCommand() {
         return Stream.of(
                 Arguments.of(
-                        DeleteJobFilter.builder().force(true).id(1L).user(SGEUSER).build(),
+                        DeleteJobFilter.builder().force(true).ids(List.of(ONE_LONG)).user(SGEUSER).build(),
                         new String[]{QDEL_COMMAND, FORCED_QDEL, USER_QDEL, SGEUSER, ONE}),
                 Arguments.of(
-                        DeleteJobFilter.builder().force(false).id(1L).user(SGEUSER).build(),
+                        DeleteJobFilter.builder().force(false).ids(List.of(ONE_LONG)).user(SGEUSER).build(),
                         new String[]{QDEL_COMMAND, USER_QDEL, SGEUSER, ONE}),
                 Arguments.of(
                         DeleteJobFilter.builder().force(false).user(SGEUSER).build(),
                         new String[]{QDEL_COMMAND, USER_QDEL, SGEUSER}),
                 Arguments.of(
-                        DeleteJobFilter.builder().force(false).id(1L).build(),
+                        DeleteJobFilter.builder().force(false).ids(List.of(ONE_LONG)).build(),
                         new String[]{QDEL_COMMAND, ONE})
         );
     }

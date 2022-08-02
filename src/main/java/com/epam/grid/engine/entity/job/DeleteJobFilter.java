@@ -24,6 +24,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * This class represents the parameters for the delete command.
  */
@@ -37,9 +39,9 @@ public class DeleteJobFilter {
      */
     private boolean force;
     /**
-     * ID of the job to delete.
+     * List of job IDs to delete.
      */
-    private Long id;
+    private List<Long> ids;
     /**
      * A user whose jobs require deletion.
      */

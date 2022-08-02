@@ -41,12 +41,12 @@ public interface JobProvider extends CommandTypeAware {
     Listing<Job> filterJobs(JobFilter jobFilter);
 
     /**
-     * Deletes the job being executed according to the specified parameters.
+     * Deletes jobs being executed according to the specified parameters.
      *
      * @param deleteJobFilter Search parameters for the job being deleted.
-     * @return Information about the deleted job.
+     * @return Information about deleted jobs.
      */
-    DeletedJobInfo deleteJob(DeleteJobFilter deleteJobFilter);
+    Listing<DeletedJobInfo> deleteJob(DeleteJobFilter deleteJobFilter);
 
     /**
      * Launches the job with the specified parameters.

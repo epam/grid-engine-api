@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.service;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.entity.JobFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.job.DeleteJobFilter;
@@ -42,14 +43,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_STRING;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class JobOperationProviderServiceTest {
 
     private static final long SOME_JOB_ID = 7L;
@@ -62,7 +62,6 @@ public class JobOperationProviderServiceTest {
     private static final String PENDING_STATE = "pending";
     private static final String SOME_JOB_LOG_DIRECTORY_PATH = "/mnt/logs";
 
-
     @Autowired
     private JobOperationProviderService jobOperationProviderService;
 
@@ -72,24 +71,29 @@ public class JobOperationProviderServiceTest {
     @MockBean
     private JobLogProvider jobLogProvider;
 
-    @Test
-    public void shouldReturnCorrectInfoDuringDeletion() {
-        final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
-                .id(SOME_JOB_ID)
-                .build();
-        final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .ids(List.of(SOME_JOB_ID))
-                .user(SGEUSER)
-                .build();
+    @ParameterizedTest
+    @MethodSource("provideValidRequestsForDeleting")
+    public void shouldReturnCorrectInfoDuringDeletion(final List<Long> ids, final String user) {
+        final DeleteJobFilter deleteJobFilter = new DeleteJobFilter(false, ids, user);
+        final Listing<DeletedJobInfo> expectedDeletedJobInfo =
+                new Listing<>(List.of(new DeletedJobInfo(SOME_JOB_ID, SGEUSER)));
         Mockito.doReturn(expectedDeletedJobInfo).when(jobProvider).deleteJob(deleteJobFilter);
         Assertions.assertEquals(expectedDeletedJobInfo, jobOperationProviderService.deleteJob(deleteJobFilter));
     }
 
+    static Stream<Arguments> provideValidRequestsForDeleting() {
+        return Stream.of(
+                Arguments.of(null, SGEUSER),
+                Arguments.of(List.of(), SGEUSER),
+                Arguments.of(List.of(SOME_JOB_ID), null),
+                Arguments.of(List.of(SOME_JOB_ID), EMPTY_STRING)
+        );
+    }
+
     @Test
     public void shouldReturnCorrectResponse() {
-        final Listing<Job> jobListing = listingParser(List.of(getPendingJob()));
-        final JobFilter jobFilter = new JobFilter();
-        jobFilter.setIds(Collections.singletonList(SOME_JOB_ID));
+        final Listing<Job> jobListing = new Listing<>(List.of(getPendingJob()));
+        final JobFilter jobFilter = JobFilter.builder().ids(List.of(SOME_JOB_ID)).build();
 
         Mockito.doReturn(jobListing).when(jobProvider).filterJobs(jobFilter);
         Assertions.assertEquals(jobListing, jobOperationProviderService.filter(jobFilter));
@@ -97,11 +101,8 @@ public class JobOperationProviderServiceTest {
 
     @ParameterizedTest
     @MethodSource("provideWrongDeleteRequests")
-    public void shouldThrowsExceptionDuringDeletionBecauseNotCorrectRequest(final Long id, final String user) {
-        final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
-                .id(id)
-                .user(user)
-                .build();
+    public void shouldThrowsExceptionDuringDeletionWhenWrongRequest(final List<Long> ids, final String user) {
+        final DeleteJobFilter deleteJobFilter = new DeleteJobFilter(false, ids, user);
         Assertions.assertThrows(GridEngineException.class,
                 () -> jobOperationProviderService.deleteJob(deleteJobFilter));
     }
@@ -110,15 +111,14 @@ public class JobOperationProviderServiceTest {
         return Stream.of(
                 Arguments.of(null, null),
                 Arguments.of(null, EMPTY_STRING),
-                Arguments.of(SOME_JOB_ID, SGEUSER),
-                Arguments.of(SOME_WRONG_JOB_ID, null),
-                Arguments.of(SOME_WRONG_JOB_ID, EMPTY_STRING)
+                Arguments.of(List.of(SOME_JOB_ID), SGEUSER),
+                Arguments.of(List.of(SOME_WRONG_JOB_ID), null)
         );
     }
 
     @ParameterizedTest
     @NullAndEmptySource
-    public void shouldThrowBecauseNoCommandPassedToSubmit(final String command) {
+    public void shouldThrowWhenNoCommandPassedToSubmit(final String command) {
         final JobOptions jobOptions = JobOptions.builder()
                 .command(command)
                 .build();
@@ -138,7 +138,6 @@ public class JobOperationProviderServiceTest {
     private static Job getPendingJob() {
         return Job.builder()
                 .id(SOME_JOB_ID)
-                .priority(0.55500)
                 .name(SOME_JOB_NAME)
                 .owner(SGEUSER)
                 .state(JobState.builder()
@@ -148,20 +147,5 @@ public class JobOperationProviderServiceTest {
                 .queueName(QNAME)
                 .submissionTime(LocalDateTime.parse(DATE, DateTimeFormatter.ISO_DATE_TIME))
                 .build();
-    }
-
-    private static Listing<Job> listingParser(final List<Job> sgeJobs) {
-        return new Listing<>(sgeJobs.stream()
-                .map(sgeJob -> Job.builder()
-                        .id(sgeJob.getId())
-                        .priority(sgeJob.getPriority())
-                        .name(sgeJob.getName())
-                        .owner(sgeJob.getOwner())
-                        .state(sgeJob.getState())
-                        .submissionTime(sgeJob.getSubmissionTime())
-                        .queueName(sgeJob.getQueueName())
-                        .slots(sgeJob.getSlots())
-                        .build())
-                .collect(Collectors.toList()));
     }
 }

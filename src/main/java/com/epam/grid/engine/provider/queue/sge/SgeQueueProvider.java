@@ -156,11 +156,10 @@ public class SgeQueueProvider implements QueueProvider {
     }
 
     /**
-     * Registers a {@code queue} matching the requested description in the Sun Grid Engine queuing system.
+     * Registers a queue matching the requested description in the Sun Grid Engine queuing system.
      *
      * @param registrationRequest the description of the queue to be registered
-     * @return the registered {@code queue}
-     * @see Queue
+     * @return the registered {@link Queue}
      */
     @Override
     public Queue registerQueue(final QueueVO registrationRequest) {
@@ -193,11 +192,10 @@ public class SgeQueueProvider implements QueueProvider {
     }
 
     /**
-     * Updates a {@code queue} matching the requested description in the Sun Grid Engine queuing system.
+     * Updates a queue matching the requested description in the Sun Grid Engine queuing system.
      *
      * @param updateRequest the description of the queue to be updated
-     * @return the updated {@code queue}
-     * @see Queue
+     * @return the updated {@link Queue}
      */
     @Override
     public Queue updateQueue(final QueueVO updateRequest) {

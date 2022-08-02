@@ -19,33 +19,37 @@
 
 package com.epam.grid.engine.entity.job;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * This class is used to assign parallel environment options. Can be used only in SLURM.
  */
-@Value
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ParallelExecutionOptions {
     /**
      * Number of tasks to be created for the job.
      */
-    int numTasks;
+    private int numTasks;
     /**
      * Minimum/maximum number of nodes allocated to the job.
      */
-    int nodes;
+    private int nodes;
     /**
      * Number of CPUs allocated per task.
      */
-    int cpusPerTask;
+    private int cpusPerTask;
     /**
      * Maximum number of tasks per allocated node.
      */
-    int numTasksPerNode;
+    private int numTasksPerNode;
     /**
      * Prevents sharing of allocated nodes with other jobs. Suballocates CPUs to job steps.
      */
-    boolean exclusive;
+    private boolean exclusive;
 }

@@ -69,10 +69,10 @@ public class QueueOperationProviderService {
     }
 
     /**
-     * Registers a {@code queue} with specified properties in preassigned grid engine system.
+     * Registers a queue with specified properties in preassigned grid engine system.
      *
      * @param registrationRequest the properties of the queue to be registered
-     * @return the registered {@code queue}
+     * @return the registered {@link Queue}
      */
     public Queue registerQueue(final QueueVO registrationRequest) {
         return queueProvider.registerQueue(registrationRequest);
@@ -80,10 +80,10 @@ public class QueueOperationProviderService {
 
 
     /**
-     * Updates a {@code queue} with specified properties in preassigned grid engine system.
+     * Updates a queue with specified properties in preassigned grid engine system.
      *
      * @param updateRequest the properties of the queue to be updated
-     * @return the updated {@code queue}
+     * @return the updated {@link Queue}
      */
     public Queue updateQueue(final QueueVO updateRequest) {
         return queueProvider.updateQueue(updateRequest);

@@ -32,6 +32,8 @@ import com.epam.grid.engine.provider.job.JobProvider;
 import com.epam.grid.engine.provider.log.JobLogProvider;
 import com.epam.grid.engine.provider.utils.DirectoryPathUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -80,27 +82,27 @@ public class JobOperationProviderService {
     }
 
     /**
-     * Deletes the job and returns information about this job.
+     * Deletes jobs and returns information about these jobs.
      *
      * @param deleteJobFilter An object with the task deletion parameters.
      * @return Information about deleted job.
      */
-    public DeletedJobInfo deleteJob(final DeleteJobFilter deleteJobFilter) {
-        if (StringUtils.hasText(deleteJobFilter.getUser())) {
-            if (deleteJobFilter.getId() != null) {
-                throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("Incorrect filling in %s. "
-                                + "only 'id' or 'name' can be specified for job removal!", deleteJobFilter));
-            }
-        } else {
-            if (deleteJobFilter.getId() == null) {
-                throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("Incorrect filling in %s. "
-                                + "Either `id` or `user` should be specified for job removal!", deleteJobFilter));
-            }
-            if (deleteJobFilter.getId() <= 0) {
-                throw new GridEngineException(HttpStatus.BAD_REQUEST,
-                        String.format("Id specified in %s for job removal is invalid!", deleteJobFilter));
-            }
+    public Listing<DeletedJobInfo> deleteJob(final DeleteJobFilter deleteJobFilter) {
+        if (!StringUtils.hasText(deleteJobFilter.getUser()) && CollectionUtils.isEmpty(deleteJobFilter.getIds())) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("Incorrect filling in %s. "
+                    + "Either at least one `id` or `user` must be specified to delete jobs!", deleteJobFilter));
         }
+        if (StringUtils.hasText(deleteJobFilter.getUser()) && CollectionUtils.isNotEmpty(deleteJobFilter.getIds())) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("Incorrect filling in %s. "
+                    + "Only 'ids' or 'name' can be specified for jobs removal!", deleteJobFilter));
+        }
+        ListUtils.emptyIfNull(deleteJobFilter.getIds()).stream()
+                .filter(id -> id == null || id <= 0)
+                .findFirst()
+                .ifPresent(id -> {
+                    throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("At least one `id` is "
+                                    + "incorrect specified in %s for job removal!", deleteJobFilter));
+                });
         return jobProvider.deleteJob(deleteJobFilter);
     }
 
@@ -117,7 +119,6 @@ public class JobOperationProviderService {
         Optional.ofNullable(options.getWorkingDir()).ifPresent(workingDir -> {
             final String workingDirAbsolutePath =
                     DirectoryPathUtils.resolvePathToAbsolute(gridSharedFolder, workingDir);
-
             if (!workingDir.equals(workingDirAbsolutePath)) {
                 options.setWorkingDir(workingDirAbsolutePath);
                 log.info("Working directory was changed from " + workingDir + " to " + workingDirAbsolutePath);

@@ -29,7 +29,7 @@ import java.io.InputStream;
 
 public abstract class AbstractRestController {
     /**
-     * Writes passed content to {@code HttpServletResponse} to allow it's downloading from the client.
+     * Writes passed content to {@link HttpServletResponse} to allow it's downloading from the client.
      *
      * @param response The object to write data
      * @param stream   The file data stream

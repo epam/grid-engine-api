@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@TestPropertiesWithSgeEngine
 public class Swagger2MarkupTestsSuite {
 
     private static final String remoteSwaggerFilePath = "http://localhost:8080/v2/api-docs";
