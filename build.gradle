@@ -145,6 +145,10 @@ dockerCompose {
 
 composeUp.dependsOn(clean, assemble.mustRunAfter(clean))
 
+task simpleTest(type: Test) {
+    useJUnitPlatform()
+}
+
 task unitTest(type: Test) {
     filter { includeTestsMatching("UnitTestsSuite") }
     useJUnitPlatform()

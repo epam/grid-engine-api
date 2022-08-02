@@ -34,7 +34,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -52,26 +51,28 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
     private static final String URI2 = "/queues/filter";
     private static final String URI3 = "/queues/{queue_name}";
 
-    private static final String QNAME = "queue";
-    private static final String WRONG_NAME = "wrong_name";
-    private static final List<String> HOST_LIST_DEFAULT = Collections.singletonList("@allhosts");
-    private static final List<String> PE_LIST_DEFAULT = Collections.singletonList("make smp mpi");
-    private static final List<String> PE_LIST_MODIFIED = Collections.singletonList("mpi");
-    private static final List<String> OWNER_LIST_DEFAULT = Collections.singletonList("NONE");
-    private static final List<String> USER_LIST_DEFAULT = Collections.singletonList("arusers");
+    private static final String SOME_QUEUE_NAME_1 = "queue";
+    private static final String SOME_QUEUE_NAME_2 = "all.q";
+    private static final String WRONG_QUEUE_NAME = "wrong_name";
+    private static final String QUEUE_TYPE = "BATCH INTERACTIVE";
+    private static final List<String> HOST_LIST_DEFAULT = List.of("@allhosts");
+    private static final List<String> PE_LIST_DEFAULT = List.of("make smp mpi");
+    private static final List<String> PE_LIST_MODIFIED = List.of("mpi");
+    private static final List<String> OWNER_LIST_DEFAULT = List.of("NONE");
+    private static final List<String> USER_LIST_DEFAULT = List.of("arusers");
+    private static final SlotsDescription SLOTS_DESCRIPTION = new SlotsDescription(1,
+            Map.of("863431bb452c", 1));
 
     @MockBean
     QueueOperationProviderService queueOperationProviderService;
-    private final SlotsDescription slotsDescription = new SlotsDescription(1,
-            Map.of("863431bb452c", 1));
 
     @Test
     public void shouldReturnJsonValueAndOkStatusForQueueNames() throws Exception {
         final Queue expectedQueue1 = Queue.builder()
-                .name("all.q")
+                .name(SOME_QUEUE_NAME_1)
                 .build();
         final Queue expectedQueue2 = Queue.builder()
-                .name("main")
+                .name(SOME_QUEUE_NAME_2)
                 .build();
         final List<Queue> expectedQueues = List.of(expectedQueue1, expectedQueue2);
         doReturn(expectedQueues).when(queueOperationProviderService).listQueues();
@@ -85,17 +86,17 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
     @Test
     public void shouldReturnJsonValueAndOkStatusForQueues() throws Exception {
         final Queue expectedQueue = Queue.builder()
-                .name("all.q")
+                .name(SOME_QUEUE_NAME_2)
                 .hostList(HOST_LIST_DEFAULT)
-                .numberInSchedulingOrder(Integer.parseInt("0"))
+                .numberInSchedulingOrder(0)
                 .loadThresholds(Map.of("np_load_avg", 1.75))
                 .suspendThresholds(Map.of())
-                .numOfSuspendedJobs(Integer.parseInt("1"))
+                .numOfSuspendedJobs(1)
                 .interval("00:05:00")
-                .jobPriority(Integer.parseInt("0"))
-                .qtype("BATCH INTERACTIVE")
+                .jobPriority(0)
+                .qtype(QUEUE_TYPE)
                 .parallelEnvironmentNames(PE_LIST_DEFAULT)
-                .slots(slotsDescription)
+                .slots(SLOTS_DESCRIPTION)
                 .tmpDir("/tmp")
                 .build();
         final List<Queue> expectedResult = List.of(expectedQueue);
@@ -109,7 +110,9 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
 
     @Test
     public void shouldReturnJsonValueAndOkStatusForDeletion() throws Exception {
-        final Queue deletedQueue = buildQueue();
+        final Queue deletedQueue = Queue.builder()
+                .name(QueueOperationControllerTest.TEST_QUEUE_NAME)
+                .build();
 
         doReturn(deletedQueue).when(queueOperationProviderService).deleteQueue(TEST_QUEUE_NAME);
 
@@ -123,17 +126,10 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
         assertThat(actual).isEqualToIgnoringWhitespace(objectMapper.writeValueAsString(deletedQueue));
     }
 
-    private static Queue buildQueue() {
-        return Queue.builder()
-                .name(QueueOperationControllerTest.TEST_QUEUE_NAME)
-                .build();
-    }
-
     @Test
     public void shouldReturnJsonValueAndOkStatusForNewQueueName() throws Exception {
-
         final Queue expectedQueue = Queue.builder()
-                .name(QNAME)
+                .name(SOME_QUEUE_NAME_1)
                 .hostList(HOST_LIST_DEFAULT)
                 .build();
         final QueueVO registrationRequest = QueueVO.builder()
@@ -151,9 +147,8 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
 
     @Test
     public void shouldReturnErrorCodeForWrongQueueRegistrationRequest() throws Exception {
-
         final QueueVO registrationRequest = QueueVO.builder()
-                .name(WRONG_NAME)
+                .name(WRONG_QUEUE_NAME)
                 .build();
         doThrow(new GridEngineException(HttpStatus.NOT_FOUND, "Grid engine failed queue registration"))
                 .when(queueOperationProviderService).registerQueue(registrationRequest);
@@ -169,13 +164,12 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
 
     @Test
     public void shouldReturnJsonValueAndOkStatusForModification() throws Exception {
-
         final QueueVO updateRequest = QueueVO.builder()
-                .name(QNAME)
+                .name(SOME_QUEUE_NAME_1)
                 .parallelEnvironmentNames(PE_LIST_MODIFIED)
                 .build();
         final Queue modifiedQueue = Queue.builder()
-                .name(QNAME)
+                .name(SOME_QUEUE_NAME_1)
                 .hostList(HOST_LIST_DEFAULT)
                 .parallelEnvironmentNames(PE_LIST_MODIFIED)
                 .ownerList(OWNER_LIST_DEFAULT)
@@ -192,9 +186,8 @@ public class QueueOperationControllerTest extends AbstractControllerTest {
 
     @Test
     public void shouldReturnErrorCodeForWrongQueueModificationRequest() throws Exception {
-
         final QueueVO updateRequest = QueueVO.builder()
-                .name(WRONG_NAME)
+                .name(WRONG_QUEUE_NAME)
                 .build();
         doThrow(new GridEngineException(HttpStatus.NOT_FOUND, "Grid engine failed queue update"))
                 .when(queueOperationProviderService).updateQueue(updateRequest);

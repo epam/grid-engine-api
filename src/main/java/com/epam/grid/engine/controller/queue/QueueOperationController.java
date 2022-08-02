@@ -133,11 +133,10 @@ public class QueueOperationController {
     }
 
     /**
-     * Registers a {@code queue} with specified in the {@link QueueVO} properties.
+     * Registers a queue with specified in the {@link QueueVO} properties.
      *
      * @param registrationRequest the properties of the queue to be registered
-     * @return the registered {@code queue}
-     * @see Queue
+     * @return the registered {@link Queue}
      */
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
@@ -157,11 +156,10 @@ public class QueueOperationController {
     }
 
     /**
-     * Updates a {@code queue} with specified in the {@link QueueVO} properties.
+     * Updates a queue with specified in the {@link QueueVO} properties.
      *
      * @param updateRequest the properties of the queue to be updated
-     * @return the updated {@code queue}
-     * @see Queue
+     * @return the updated {@link Queue}
      */
     @PutMapping
     @ResponseStatus(HttpStatus.OK)

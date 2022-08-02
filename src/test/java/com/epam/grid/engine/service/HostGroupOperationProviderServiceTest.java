@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.service;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
 import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +36,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class HostGroupOperationProviderServiceTest {
 
     private static final String HOST_GROUP_NAME = "@allhosts";
@@ -44,7 +46,7 @@ public class HostGroupOperationProviderServiceTest {
     @Autowired
     private HostGroupOperationProviderService hostGroupOperationProviderService;
 
-    @SpyBean
+    @MockBean
     private HostGroupProvider hostGroupProvider;
 
     @Test

@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.provider.healthcheck.sge;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.healthcheck.GridEngineStatus;
@@ -42,7 +43,8 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_STR
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class SgeHealthCheckProviderTest {
 
     private static final String SOME_HOST = "someHost";

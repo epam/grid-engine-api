@@ -19,52 +19,33 @@
 
 package com.epam.grid.engine.service;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.entity.usage.UsageReport;
 import com.epam.grid.engine.entity.usage.UsageReportFilter;
-import com.epam.grid.engine.provider.usage.sge.SgeUsageProvider;
+import com.epam.grid.engine.provider.usage.UsageProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class UsageOperationProviderServiceTest {
 
     @Autowired
     UsageOperationProviderService usageOperationProviderService;
 
-    @SpyBean
-    SgeUsageProvider usageProvider;
+    @MockBean
+    UsageProvider usageProvider;
 
     @Test
     public void shouldReturnCorrectResponse() {
-
-        final UsageReport correctReport = reportFill(usageParser());
-
-        doReturn(correctReport).when(usageProvider).getUsageReport(new UsageReportFilter());
-        Assertions.assertEquals(correctReport, usageOperationProviderService.getUsageReport(new UsageReportFilter()));
-        Mockito.verify(usageProvider, times(1)).getUsageReport(new UsageReportFilter());
-    }
-
-    private UsageReport reportFill(final UsageReport usageReport) {
-        return UsageReport.builder()
-                .wallClock(usageReport.getWallClock())
-                .userTime(usageReport.getUserTime())
-                .systemTime(usageReport.getSystemTime())
-                .cpuTime(usageReport.getCpuTime())
-                .memory(usageReport.getMemory())
-                .ioData(usageReport.getIoData())
-                .ioWaiting(usageReport.getIoWaiting())
-                .build();
-    }
-
-    private UsageReport usageParser() {
-        return UsageReport.builder()
+        final UsageReport correctReport = UsageReport.builder()
                 .wallClock(1)
                 .cpuTime(2.0)
                 .ioData(3.00)
@@ -73,5 +54,9 @@ public class UsageOperationProviderServiceTest {
                 .systemTime(6.0)
                 .userTime(7.0)
                 .build();
+
+        doReturn(correctReport).when(usageProvider).getUsageReport(new UsageReportFilter());
+        Assertions.assertEquals(correctReport, usageOperationProviderService.getUsageReport(new UsageReportFilter()));
+        Mockito.verify(usageProvider, times(1)).getUsageReport(new UsageReportFilter());
     }
 }

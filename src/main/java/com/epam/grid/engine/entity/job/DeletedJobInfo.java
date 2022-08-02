@@ -20,26 +20,22 @@
 package com.epam.grid.engine.entity.job;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 /**
  * This class represents information about deleted jobs.
  */
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class DeletedJobInfo {
     /**
-     * List of IDs of deleted jobs.
+     * Deleted job ID.
      */
-    private List<Long> ids;
+    private long id;
     /**
-     * A user whose jobs deleted.
+     * A user whose job deleted.
      */
     private String user;
 }

@@ -366,7 +366,7 @@ DELETE /jobs
 
 
 ##### Description
-Tries to delete one or more jobs by username, id or job name. If successful, returns the message and information about deleted job
+Tries to delete one or more jobs by username or id. If successful, returns the message and information about deleted job
 
 
 ##### Parameters
@@ -380,7 +380,7 @@ Tries to delete one or more jobs by username, id or job name. If successful, ret
 
 |HTTP Code|Description|Schema|
 |---|---|---|
-|**200**|Job deleted successfully|[DeletedJobInfo](definitions.md#deletedjobinfo)|
+|**200**|Job deleted successfully|[Listing«DeletedJobInfo»](definitions.md#e3d7652c277fe76953ca5afe80955ec2)|
 |**204**|No Content|No Content|
 |**400**|Missing or invalid request body|No Content|
 |**401**|Unauthorized|No Content|
@@ -406,7 +406,7 @@ Tries to delete one or more jobs by username, id or job name. If successful, ret
 ```json
 {
   "force" : true,
-  "id" : 0,
+  "ids" : [ 0 ],
   "user" : "string"
 }
 ```
@@ -417,8 +417,10 @@ Tries to delete one or more jobs by username, id or job name. If successful, ret
 ###### Response 200
 ```json
 {
-  "id" : [ 0 ],
-  "user" : "string"
+  "elements" : [ {
+    "id" : 0,
+    "user" : "string"
+  } ]
 }
 ```
 
@@ -488,6 +490,13 @@ Tries to add a job to the queue, if successful, returns the index of the job.
     "min" : 0,
     "name" : "string"
   },
+  "parallelExecutionOptions" : {
+    "cpusPerTask" : 0,
+    "exclusive" : true,
+    "nodes" : 0,
+    "numTasks" : 0,
+    "numTasksPerNode" : 0
+  },
   "priority" : 0,
   "queues" : [ "string" ],
   "useAllEnvVars" : true,
@@ -532,7 +541,7 @@ Tries to get job log information
 
 |Type|Name|Description|Schema|Default|
 |---|---|---|---|---|
-|**Path**|**jobId**  <br>*required*|jobId|integer (int32)||
+|**Path**|**jobId**  <br>*required*|jobId|integer (int64)||
 |**Query**|**fromHead**  <br>*optional*|fromHead|boolean||
 |**Query**|**lines**  <br>*optional*|lines|integer (int32)|`0`|
 |**Query**|**type**  <br>*optional*|type|enum (ERR, OUT)|`"ERR"`|
@@ -593,7 +602,7 @@ Tries to get of the job log file
 
 |Type|Name|Description|Schema|
 |---|---|---|---|
-|**Path**|**jobId**  <br>*required*|jobId|integer (int32)|
+|**Path**|**jobId**  <br>*required*|jobId|integer (int64)|
 |**Query**|**type**  <br>*required*|type|enum (ERR, OUT)|
 
 

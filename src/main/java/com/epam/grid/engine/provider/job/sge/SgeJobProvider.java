@@ -40,8 +40,10 @@ import com.epam.grid.engine.provider.job.JobProvider;
 import com.epam.grid.engine.provider.utils.JaxbUtils;
 import com.epam.grid.engine.provider.utils.sge.job.QstatCommandParser;
 import com.epam.grid.engine.provider.utils.CommandsUtils;
+import com.epam.grid.engine.utils.TextConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -50,19 +52,17 @@ import org.thymeleaf.context.Context;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
-import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.epam.grid.engine.provider.utils.CommandsUtils.mergeOutputLines;
-import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
-import static com.epam.grid.engine.utils.TextConstants.SPACE;
 
 /**
  * This class performs various actions with jobs for the SGE engine.
@@ -72,7 +72,8 @@ import static com.epam.grid.engine.utils.TextConstants.SPACE;
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeJobProvider implements JobProvider {
 
-    private static final String HAS_DELETED_JOB = "has deleted job";
+    private static final int PE_MIN_VALUE = 1;
+    private static final int PE_MAX_VALUE = 9_999_999;
     private static final String JOB_FILTER = "filter";
     private static final String JOB_STATE = "state";
     private static final String QDEL_COMMAND = "qdel";
@@ -82,9 +83,9 @@ public class SgeJobProvider implements JobProvider {
     private static final String OPTIONS = "options";
     private static final String LOG_DIR = "logDir";
     private static final String ENV_VARIABLES = "envVariables";
-    private static final String EXECUTION_RESULT = "Execution result - ";
+    private static final String JOBS_DELETING_EXECUTION_RESULT = "Jobs deleting result: ";
     private static final Pattern SUBMITTED_JOB_ID_PATTERN = Pattern.compile("Your job (\\d+).* has been submitted");
-    private static final Pattern FIND_DELETE_ID_PATTERN = Pattern.compile("\\d+");
+    private static final Pattern DELETED_JOB_ID_PATTERN = Pattern.compile(".*has deleted job (\\d+).*");
 
     /**
      * The MapStruct mapping mechanism used.
@@ -120,13 +121,12 @@ public class SgeJobProvider implements JobProvider {
         final CommandResult result = simpleCmdExecutor.execute(makeQstatCommand(jobFilter));
         if (result.getExitCode() != 0) {
             CommandsUtils.throwExecutionDetails(result);
-        } else if (!result.getStdErr().isEmpty()) {
+        }
+        if (!result.getStdErr().isEmpty()) {
             log.warn(result.getStdErr().toString());
         }
-        return mapJobs(JaxbUtils.unmarshall(String.join(NEW_LINE_DELIMITER,
-                                result.getStdOut()),
-                        SgeQueueListing.class),
-                jobFilter);
+        return mapJobs(JaxbUtils.unmarshall(String.join(TextConstants.NEW_LINE_DELIMITER, result.getStdOut()),
+                SgeQueueListing.class), jobFilter);
     }
 
     /**
@@ -173,14 +173,32 @@ public class SgeJobProvider implements JobProvider {
     }
 
     /**
-     * Deletes the job being performed according to the specified parameters.
+     * Deletes jobs being performed according to the specified parameters.
+     * <p>note: the {@link DeleteJobFilter} argument must contain only an owner's name or list of job ids.</p>
      *
      * @param deleteJobFilter Search parameters for the job being deleted.
-     * @return Information about the deleted job.
+     * @return Information about deleted jobs.
      */
     @Override
-    public DeletedJobInfo deleteJob(final DeleteJobFilter deleteJobFilter) {
-        return parseDeleteCommandResult(makeQdelCommand(deleteJobFilter));
+    public Listing<DeletedJobInfo> deleteJob(final DeleteJobFilter deleteJobFilter) {
+        final Map<Long, String> jobOwners = getJobOwners(deleteJobFilter);
+        if (jobOwners.isEmpty()) {
+            throw new GridEngineException(HttpStatus.NOT_FOUND,
+                    String.format("No jobs found from the specified %s to remove!", deleteJobFilter));
+        }
+        final CommandResult result = simpleCmdExecutor.execute(makeQdelCommand(deleteJobFilter));
+        final List<Long> deletedJobIds = parseDeletedJobId(result.getStdOut());
+
+        if (result.getExitCode() != 0) {
+            if (deletedJobIds.isEmpty()) {
+                CommandsUtils.throwExecutionDetails(result, HttpStatus.NOT_FOUND);
+            } else {
+                log.warn(JOBS_DELETING_EXECUTION_RESULT + result);
+            }
+        }
+        return new Listing<>(deletedJobIds.stream()
+                .map(id -> new DeletedJobInfo(id, jobOwners.get(id)))
+                .collect(Collectors.toList()));
     }
 
     /**
@@ -231,47 +249,20 @@ public class SgeJobProvider implements JobProvider {
         return commandCompiler.compileCommand(getProviderType(), QDEL_COMMAND, context);
     }
 
-    /**
-     * Processes the received result of executing the delete command.
-     *
-     * @param command The structure of an executable delete command.
-     * @return Information about the deleted job.
-     */
-    private DeletedJobInfo parseDeleteCommandResult(final String[] command) {
-        final CommandResult result = simpleCmdExecutor.execute(command);
-        if (result.getExitCode() == 0) {
-            return new DeletedJobInfo(
-                    parseDeletedJobId(result.getStdOut()),
-                    parseUser(result.getStdOut()));
-        }
-        if (result.getStdOut().get(0).contains(HAS_DELETED_JOB) && result.getStdErr().isEmpty()) {
-            log.warn(EXECUTION_RESULT + result);
-            return new DeletedJobInfo(
-                    parseDeletedJobId(result.getStdOut()),
-                    parseUser(result.getStdOut()));
-        }
-        throw new GridEngineException(HttpStatus.NOT_FOUND, mergeOutputLines(result.getStdOut())
-                + NEW_LINE_DELIMITER + mergeOutputLines(result.getStdErr()));
-    }
-
     private boolean isValidParallelEnvOptions(final ParallelEnvOptions options) {
         return options == null
                 || StringUtils.hasText(options.getName())
-                && (options.getMin() > 0 || options.getMax() > 0)
-                && (options.getMax() == 0 || options.getMin() < options.getMax());
+                && !(options.getMin() > options.getMax()
+                || options.getMin() < PE_MIN_VALUE || options.getMax() < PE_MIN_VALUE
+                || options.getMin() > PE_MAX_VALUE || options.getMax() > PE_MAX_VALUE);
     }
 
     private List<Long> parseDeletedJobId(final List<String> stdOut) {
-        return FIND_DELETE_ID_PATTERN.matcher(mergeOutputLines(stdOut))
+        return DELETED_JOB_ID_PATTERN.matcher(mergeOutputLines(stdOut))
                 .results()
-                .map(MatchResult::group)
+                .map(matchResult -> matchResult.group(1).trim())
                 .map(Long::valueOf)
                 .collect(Collectors.toList());
-    }
-
-    private String parseUser(final List<String> stdOut) {
-        final String stringStdOut = mergeOutputLines(stdOut);
-        return stringStdOut.split(SPACE)[0];
     }
 
     private Listing<Job> mapJobs(final SgeQueueListing sgeQueueListing, final JobFilter jobFilter) {
@@ -323,5 +314,16 @@ public class SgeJobProvider implements JobProvider {
                 .flatMap(Collection::stream)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private Map<Long, String> getJobOwners(final DeleteJobFilter deleteJobFilter) {
+        final JobFilter jobFilter = new JobFilter();
+        if (StringUtils.hasText(deleteJobFilter.getUser())) {
+            jobFilter.setOwners(List.of(deleteJobFilter.getUser()));
+        } else {
+            jobFilter.setIds(deleteJobFilter.getIds());
+        }
+        return ListUtils.emptyIfNull(filterJobs(jobFilter).getElements()).stream()
+                .collect(Collectors.toMap(Job::getId, Job::getOwner));
     }
 }

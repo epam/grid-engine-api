@@ -55,18 +55,18 @@ public interface QueueProvider extends CommandTypeAware {
     Queue deleteQueues(String queueName);
 
     /**
-     * Registers a {@code queue} with specified properties in grid engine system.
+     * Registers a queue with specified properties in grid engine system.
      *
      * @param registrationRequest the properties of the queue to be registered
-     * @return the registered {@code queue}
+     * @return the registered {@link Queue}
      */
     Queue registerQueue(QueueVO registrationRequest);
 
     /**
-     * Updates a {@code queue} with specified properties in grid engine system.
+     * Updates a queue with specified properties in grid engine system.
      *
      * @param updateRequest the properties of the queue to be updated
-     * @return the updated {@code queue}
+     * @return the updated {@link Queue}
      */
     Queue updateQueue(QueueVO updateRequest);
 }

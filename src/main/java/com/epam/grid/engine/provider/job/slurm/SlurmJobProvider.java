@@ -48,8 +48,8 @@ import org.springframework.util.StringUtils;
 import org.thymeleaf.context.Context;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,9 +75,9 @@ public class SlurmJobProvider implements JobProvider {
     private static final String ENV_VARIABLES = "envVariables";
     private static final String START_TERMINATING_JOB_PREFIX = "scancel: Terminating job";
     private static final String KILL_JOB_ERROR_PREFIX = "scancel: error: Kill job error on job id";
-    private static final String SQUEUE_JOB_ID_ERROR_PATTERN = ".*Invalid job id specified.*";
     private static final int JOB_ID_START_POSITION = START_TERMINATING_JOB_PREFIX.length() + 1;
     private static final int ERROR_JOB_ID_POSITION = KILL_JOB_ERROR_PREFIX.length() + 1;
+    private static final String JOBS_DELETING_EXECUTION_RESULT = "Jobs deleting result: ";
     private static final Pattern SUBMITTED_JOB_PATTERN = Pattern.compile("Submitted batch job (\\d+).*");
 
     /**
@@ -112,7 +112,7 @@ public class SlurmJobProvider implements JobProvider {
     public Listing<Job> filterJobs(final JobFilter jobFilter) {
         SacctCommandParser.filterCorrectJobIds(jobFilter);
         final CommandResult result = simpleCmdExecutor.execute(makeSqueueCommand(jobFilter));
-        if (result.getExitCode() != 0 && !jobNotFoundByIdError(result)) {
+        if (result.getExitCode() != 0) {
             CommandsUtils.throwExecutionDetails(result);
         } else if (!result.getStdErr().isEmpty()) {
             log.warn(CommandsUtils.mergeOutputLines(result.getStdErr()));
@@ -127,8 +127,8 @@ public class SlurmJobProvider implements JobProvider {
                     + "use ParallelExecutionOptions");
         }
         if (checkParallelExecutionOptions(options.getParallelExecutionOptions())) {
-            throw new UnsupportedOperationException("All Parallel execution options except Exclusive should be "
-                    + "greater than 0!");
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, "All Parallel execution options except Exclusive "
+                    + "should be greater than 0!");
         }
         if (options.getPriority() != null && (options.getPriority() < 0 || options.getPriority() > MAX_SENT_PRIORITY)) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "Priority should be between 0 and 4_294_967_294");
@@ -151,17 +151,17 @@ public class SlurmJobProvider implements JobProvider {
 
     /**
      * Deletes the job being performed according to the specified parameters.
+     * <p>note: the {@link DeleteJobFilter} argument must contain only an owner's name or list of job ids.</p>
      *
      * @param deleteJobFilter Search parameters for the job being deleted.
-     * @return Information about the deleted job.
+     * @return Information about deleted jobs.
      */
     @Override
-    public DeletedJobInfo deleteJob(final DeleteJobFilter deleteJobFilter) {
-        final String jobOwner;
-        if (StringUtils.hasText(deleteJobFilter.getUser())) {
-            jobOwner = deleteJobFilter.getUser();
-        } else {
-            jobOwner = getJobById(deleteJobFilter.getId()).getOwner();
+    public Listing<DeletedJobInfo> deleteJob(final DeleteJobFilter deleteJobFilter) {
+        final Map<Long, String> jobOwners = getJobOwners(deleteJobFilter);
+        if (jobOwners.isEmpty()) {
+            throw new GridEngineException(HttpStatus.NOT_FOUND,
+                    String.format("No jobs found from the specified %s to remove!", deleteJobFilter));
         }
 
         final CommandResult result = simpleCmdExecutor.execute(makeScancelCommand(deleteJobFilter));
@@ -184,7 +184,12 @@ public class SlurmJobProvider implements JobProvider {
         if (deletedJobIds.isEmpty()) {
             CommandsUtils.throwExecutionDetails(result, HttpStatus.NOT_FOUND);
         }
-        return new DeletedJobInfo(deletedJobIds, jobOwner);
+        if (deletedJobIds.size() < jobOwners.size()) {
+            log.warn(JOBS_DELETING_EXECUTION_RESULT + result);
+        }
+        return new Listing<>(deletedJobIds.stream()
+                .map(id -> new DeletedJobInfo(id, jobOwners.get(id)))
+                .collect(Collectors.toList()));
     }
 
     /**
@@ -238,11 +243,6 @@ public class SlurmJobProvider implements JobProvider {
         return new Listing<>();
     }
 
-    private boolean jobNotFoundByIdError(final CommandResult result) {
-        return ListUtils.emptyIfNull(result.getStdErr()).stream()
-                .anyMatch(s -> !s.matches(SQUEUE_JOB_ID_ERROR_PATTERN));
-    }
-
     /**
      * This method creates the structure of the executed job deletion command based on the passed options.
      *
@@ -255,26 +255,26 @@ public class SlurmJobProvider implements JobProvider {
         return commandCompiler.compileCommand(getProviderType(), SCANCEL_COMMAND, context);
     }
 
-    private Job getJobById(final Long id) {
-        final JobFilter jobFilter = JobFilter.builder()
-                .ids(Collections.singletonList(id))
-                .build();
-
+    private Map<Long, String> getJobOwners(final DeleteJobFilter deleteJobFilter) {
+        final JobFilter jobFilter = new JobFilter();
+        if (StringUtils.hasText(deleteJobFilter.getUser())) {
+            jobFilter.setOwners(List.of(deleteJobFilter.getUser()));
+        } else {
+            jobFilter.setIds(deleteJobFilter.getIds());
+        }
         return ListUtils.emptyIfNull(filterJobs(jobFilter).getElements()).stream()
-                .findFirst()
-                .orElseThrow(() -> new GridEngineException(HttpStatus.NOT_FOUND,
-                        String.format("Id specified in %d for job removal not found!", id)));
+                .collect(Collectors.toMap(Job::getId, Job::getOwner));
     }
 
     private boolean checkParallelExecutionOptions(final ParallelExecutionOptions parallelExecutionOptions) {
         return parallelExecutionOptions != null
-                && (isNotPositive(parallelExecutionOptions.getNumTasks())
-                || isNotPositive(parallelExecutionOptions.getNodes())
-                || isNotPositive(parallelExecutionOptions.getCpusPerTask())
-                || isNotPositive(parallelExecutionOptions.getNumTasksPerNode()));
+                && (isNotGreaterThanZero(parallelExecutionOptions.getNumTasks())
+                || isNotGreaterThanZero(parallelExecutionOptions.getNodes())
+                || isNotGreaterThanZero(parallelExecutionOptions.getCpusPerTask())
+                || isNotGreaterThanZero(parallelExecutionOptions.getNumTasksPerNode()));
     }
 
-    private boolean isNotPositive(final int intToCheck) {
+    private boolean isNotGreaterThanZero(final int intToCheck) {
         return intToCheck < 1;
     }
 }
