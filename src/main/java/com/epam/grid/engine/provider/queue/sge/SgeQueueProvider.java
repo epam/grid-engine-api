@@ -36,6 +36,7 @@ import com.epam.grid.engine.provider.utils.sge.common.SgeOutputParsingUtils;
 import com.epam.grid.engine.provider.utils.sge.queue.SgeDeleteQueueCommandUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -60,6 +61,7 @@ import static com.epam.grid.engine.utils.TextConstants.SPACE;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeQueueProvider implements QueueProvider {
 
     private static final String FILTER_PARAMETER = "filter";
