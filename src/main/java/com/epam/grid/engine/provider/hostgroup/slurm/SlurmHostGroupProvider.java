@@ -22,10 +22,12 @@ package com.epam.grid.engine.provider.hostgroup.slurm;
 import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.entity.hostgroup.HostGroup;
+import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.provider.hostgroup.HostGroupProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -47,7 +49,8 @@ public class SlurmHostGroupProvider implements HostGroupProvider {
      */
     @Override
     public List<HostGroup> listHostGroups(final HostGroupFilter hostGroupFilter) {
-        throw new UnsupportedOperationException("Slurm doesn't provide approach of stored host group.");
+        throw new GridEngineException(HttpStatus.BAD_REQUEST,
+                "Host Group functionality isn't supported for Slurm engine type.");
     }
 
     /**
@@ -56,6 +59,7 @@ public class SlurmHostGroupProvider implements HostGroupProvider {
      */
     @Override
     public HostGroup getHostGroup(final String groupName) {
-        throw new UnsupportedOperationException("Slurm doesn't provide approach of stored host group.");
+        throw new GridEngineException(HttpStatus.BAD_REQUEST,
+                "Host Group functionality isn't supported for Slurm engine type.");
     }
 }

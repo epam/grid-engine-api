@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.mapper.queue.slurm;
 
+import com.epam.grid.engine.entity.host.slurm.SlurmHost;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.SlotsDescription;
 import com.epam.grid.engine.entity.queue.slurm.SlurmQueue;
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface SlurmQueueMapper {
 
-    @Mapping(target = "slots", ignore = true)
     @Mapping(target = "numberInSchedulingOrder", ignore = true)
     @Mapping(target = "loadThresholds", ignore = true)
     @Mapping(target = "suspendThresholds", ignore = true)
@@ -53,17 +53,21 @@ public interface SlurmQueueMapper {
 
     @AfterMapping
     default void fillSlots(final SlurmQueue slurmQueue, final @MappingTarget Queue queue) {
-        queue.setSlots(mapSlurmSlotsToSlots(slurmQueue.getNodelist(), slurmQueue.getCpus()));
+        queue.setSlots(mapSlurmHostListToSlots(slurmQueue.getNodelist()));
     }
 
-    static SlotsDescription mapSlurmSlotsToSlots(final List<String> nodeList, final int cpus) {
+    default List<String> slurmHostListToNames(final List<SlurmHost> hostList) {
+        return hostList.stream().map(SlurmHost::getNodeName).collect(Collectors.toList());
+    }
+
+    static SlotsDescription mapSlurmHostListToSlots(final List<SlurmHost> nodeList) {
         final SlotsDescription slotsDescription = new SlotsDescription();
         final Map<String, Integer> slots = ListUtils.emptyIfNull(nodeList).stream()
                 .collect(Collectors.toMap(
-                        nodeListElem -> nodeListElem,
-                        nodeListElem -> cpus)
+                        SlurmHost::getNodeName,
+                        SlurmHost::getCpuTotal)
                 );
-        slotsDescription.setSlots(nodeList.size());
+        slotsDescription.setSlots(nodeList.stream().mapToInt(SlurmHost::getCpuTotal).sum());
         slotsDescription.setSlotsDetails(slots);
         return slotsDescription;
     }

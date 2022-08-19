@@ -24,10 +24,10 @@ import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.QueueFilter;
+import com.epam.grid.engine.entity.host.slurm.SlurmHost;
 import com.epam.grid.engine.entity.queue.slurm.SlurmQueue;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.QueueVO;
-import com.epam.grid.engine.entity.queue.SlotsDescription;
 import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.mapper.queue.slurm.SlurmQueueMapper;
 import com.epam.grid.engine.provider.queue.QueueProvider;
@@ -42,8 +42,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thymeleaf.context.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,7 +63,7 @@ import static com.epam.grid.engine.utils.TextConstants.COMMA;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmQueueProvider implements QueueProvider {
-    private static final String SCONTROL_COMMAND = "scontrolCommand";
+    private static final String SCONTROL_COMMAND = "scontrol";
     private static final String SINFO_COMMAND = "sinfo";
     private static final String SCONTROL_CREATE_COMMAND = "create";
     private static final String SCONTROL_UPDATE_COMMAND = "update";
@@ -79,7 +81,6 @@ public class SlurmQueueProvider implements QueueProvider {
     private static final int SCONTROL_OUPUT_NODES_INDEX = 1;
     private static final int SCONTROL_OUPUT_CPUS_INDEX = 2;
     private static final int SCONTROL_OUPUT_USERGROUPS_INDEX = 3;
-    private static final int CPUS_PER_NODE_BY_DEFAULT = 1;
 
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final SlurmQueueMapper queueMapper;
@@ -106,15 +107,12 @@ public class SlurmQueueProvider implements QueueProvider {
         final CommandResult result = simpleCmdExecutor.execute(commandCompiler.compileCommand(getProviderType(),
                 SCONTROL_COMMAND, context));
         checkIsResultIsCorrect(result);
-        final List<String> parsedRegisterNodes = parseGroupOfNodes(registrationRequest.getHostList());
-        final SlotsDescription slotDescription = SlurmQueueMapper.mapSlurmSlotsToSlots(parsedRegisterNodes,
-                CPUS_PER_NODE_BY_DEFAULT);
-        return Queue.builder()
-                .name(registrationRequest.getName())
-                .hostList(parsedRegisterNodes)
-                .allowedUserGroups(registrationRequest.getAllowedUserGroups())
-                .slots(slotDescription)
-                .build();
+        return listQueues(
+                QueueFilter.builder().queues(Collections.singletonList(registrationRequest.getName())).build()
+        ).stream()
+        .findFirst()
+        .orElseThrow(() -> new GridEngineException(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Can't load a queue that was just registered"));
     }
 
     @Override
@@ -137,9 +135,15 @@ public class SlurmQueueProvider implements QueueProvider {
                 SINFO_COMMAND, context));
         checkIfExecutionResultIsEmpty(sinfoResult);
 
-        final SlurmQueue partitionData = getPartitionData(sinfoResult.getStdOut().get(0));
+        final SlurmQueue partitionData = parseResultToSlurmQueues(sinfoResult.getStdOut())
+                .stream()
+                .findFirst()
+                .orElseThrow(
+                        () -> new GridEngineException(HttpStatus.INTERNAL_SERVER_ERROR, "Can't load slurm queue.")
+                );
 
-        final List<String> currentNodesParsed = partitionData.getNodelist();
+        final List<String> currentNodesParsed = partitionData.getNodelist().stream()
+                .map(SlurmHost::getNodeName).collect(Collectors.toList());
         final List<String> userGroups = partitionData.getGroups();
 
         final List<String> updateHostListParsed = parseGroupOfNodes(updateHostList);
@@ -154,12 +158,12 @@ public class SlurmQueueProvider implements QueueProvider {
                 SCONTROL_COMMAND, context));
         checkIsResultIsCorrect(result);
 
-        return Queue.builder()
-                .name(updateName)
-                .hostList(updateHostListParsed)
-                .allowedUserGroups(updateUserGroups)
-                .slots(SlurmQueueMapper.mapSlurmSlotsToSlots(updateHostListParsed, CPUS_PER_NODE_BY_DEFAULT))
-                .build();
+        return listQueues(
+                QueueFilter.builder().queues(Collections.singletonList(updateName)).build()
+        ).stream()
+        .findFirst()
+        .orElseThrow(() -> new GridEngineException(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Can't load a queue that was just registered"));
     }
 
     @Override
@@ -240,11 +244,7 @@ public class SlurmQueueProvider implements QueueProvider {
                     + SCONTROL_OUPUT_SIZE + " fields, but " + nodeDataArray.length + " were fetched.");
         }
 
-        final List<String> nodeList = parseGroupOfNodes(
-                Arrays.stream(nodeDataArray[SCONTROL_OUPUT_NODES_INDEX].split(COMMA))
-                        .filter(StringUtils::hasText)
-                        .collect(Collectors.toList())
-        );
+        final String nodeName = nodeDataArray[SCONTROL_OUPUT_NODES_INDEX];
 
         final int cpusPerNode = Integer.parseInt(nodeDataArray[SCONTROL_OUPUT_CPUS_INDEX]);
 
@@ -254,9 +254,10 @@ public class SlurmQueueProvider implements QueueProvider {
 
         return SlurmQueue.builder()
                 .partition(nodeDataArray[SCONTROL_OUPUT_PARTNAME_INDEX])
-                .nodelist(nodeList)
-                .cpus(cpusPerNode)
-                .groups(userGroups)
+                .nodelist(
+                        Collections.singletonList(SlurmHost.builder()
+                                .nodeName(nodeName).cpuTotal(cpusPerNode).build())
+                ).groups(userGroups)
                 .build();
     }
 
@@ -277,9 +278,25 @@ public class SlurmQueueProvider implements QueueProvider {
     }
 
     private List<Queue> fillQueueData(final List<String> resultOutput) {
+        return parseResultToSlurmQueues(resultOutput)
+                .stream()
+                .map(queueMapper::slurmQueueToQueue)
+                .collect(Collectors.toList());
+    }
+
+    private List<SlurmQueue> parseResultToSlurmQueues(final List<String> resultOutput) {
         return ListUtils.emptyIfNull(resultOutput).stream()
                 .map(this::getPartitionData)
-                .map(queueMapper::slurmQueueToQueue)
+                .collect(Collectors.groupingBy(
+                        SlurmQueue::getPartition,
+                        Collectors.reducing((q1, q2) -> {
+                            q1.setNodelist(ListUtils.union(q1.getNodelist(), q2.getNodelist()));
+                            return q1;
+                        }))
+                ).values()
+                .stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
@@ -300,9 +317,9 @@ public class SlurmQueueProvider implements QueueProvider {
         final Matcher matcher = NODES_RANGE_REGEX.matcher(hosts);
         if (matcher.find()) {
             final String hostName = matcher.group(1);
-            final int fromInt = Integer.parseInt(matcher.group(2));
-            final int toInt = Integer.parseInt(matcher.group(3));
-            return IntStream.rangeClosed(fromInt, toInt)
+            final int fromNodeIndex = Integer.parseInt(matcher.group(2));
+            final int toNodeIndex = Integer.parseInt(matcher.group(3));
+            return IntStream.rangeClosed(fromNodeIndex, toNodeIndex)
                     .mapToObj(hostNumber -> hostName.concat(String.valueOf(hostNumber)));
         } else {
             return Stream.of(hosts.trim());

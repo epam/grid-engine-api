@@ -3,4 +3,4 @@ sinfo
     --partition=[# th:text="${#strings.listJoin(partitionName, ',')}"]
     [/]
 [/]
--h -o "%R|%N|%c|%g"
+-h -o "%R|%N|%c|%g" -N

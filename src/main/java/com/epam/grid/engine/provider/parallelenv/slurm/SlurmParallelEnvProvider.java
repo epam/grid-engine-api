@@ -23,8 +23,10 @@ import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
 import com.epam.grid.engine.entity.parallelenv.PeRegistrationVO;
+import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.provider.parallelenv.ParallelEnvProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,32 +39,27 @@ import java.util.List;
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmParallelEnvProvider implements ParallelEnvProvider {
     @Override
+    public CommandType getProviderType() {
+        return CommandType.SLURM;
+    }
+
+    @Override
     public List<ParallelEnv> listParallelEnv(final ParallelEnvFilter parallelEnvFilter) {
-        throw new UnsupportedOperationException("Parallel environment provider cannot be used in SLURM engine. To set "
-                + "parallel environment options please use ParallelExecutionOptions");
+        throw new GridEngineException(HttpStatus.BAD_REQUEST, "Parallel environment is not supported in SLURM engine.");
     }
 
     @Override
     public ParallelEnv getParallelEnv(final String peName) {
-        throw new UnsupportedOperationException("Parallel environment provider cannot be used in SLURM engine. To set "
-                + "parallel environment options please use ParallelExecutionOptions");
+        throw new GridEngineException(HttpStatus.BAD_REQUEST, "Parallel environment is not supported in SLURM engine.");
     }
 
     @Override
     public ParallelEnv deleteParallelEnv(final String parallelEnvName) {
-        throw new UnsupportedOperationException("Parallel environment provider cannot be used in SLURM engine. To set "
-                + "parallel environment options please use ParallelExecutionOptions");
+        throw new GridEngineException(HttpStatus.BAD_REQUEST, "Parallel environment is not supported in SLURM engine.");
     }
 
     @Override
     public ParallelEnv registerParallelEnv(final PeRegistrationVO registrationRequest) {
-        throw new UnsupportedOperationException("Parallel environment provider cannot be used in SLURM engine. To set "
-                + "parallel environment options please use ParallelExecutionOptions");
-    }
-
-    @Override
-    public CommandType getProviderType() {
-        throw new UnsupportedOperationException("Parallel environment provider cannot be used in SLURM engine. To set "
-                + "parallel environment options please use ParallelExecutionOptions");
+        throw new GridEngineException(HttpStatus.BAD_REQUEST, "Parallel environment is not supported in SLURM engine.");
     }
 }

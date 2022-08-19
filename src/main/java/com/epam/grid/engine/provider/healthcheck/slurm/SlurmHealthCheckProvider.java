@@ -39,7 +39,7 @@ import org.thymeleaf.context.Context;
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmHealthCheckProvider implements HealthCheckProvider {
 
-    private static final String SHOWCONFIG_COMMAND = "showConfig";
+    private static final String SHOW_CONFIG_COMMAND = "show_config";
 
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final GridEngineCommandCompiler commandCompiler;
@@ -71,7 +71,7 @@ public class SlurmHealthCheckProvider implements HealthCheckProvider {
     }
 
     private String[] getShowConfigCommand() {
-        return commandCompiler.compileCommand(getProviderType(), SHOWCONFIG_COMMAND, new Context());
+        return commandCompiler.compileCommand(getProviderType(), SHOW_CONFIG_COMMAND, new Context());
     }
 
 }
