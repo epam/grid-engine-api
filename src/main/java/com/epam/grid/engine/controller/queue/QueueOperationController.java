@@ -116,7 +116,7 @@ public class QueueOperationController {
      * @param queueName An object with the task deletion parameters.
      * @return Which queues were deleted.
      */
-    @DeleteMapping("/{queue_name}")
+    @DeleteMapping("/{name}")
     @ResponseStatus(HttpStatus.OK)
     @ApiOperation(value = "Delete queue",
             notes = "Deletes one or more queues"
@@ -128,7 +128,7 @@ public class QueueOperationController {
             @ApiResponse(code = 404, message = QUEUE_NOT_FOUND),
             @ApiResponse(code = 500, message = INTERNAL_ERROR)
     })
-    public Queue deleteQueue(@PathVariable("queue_name") final String queueName) {
+    public Queue deleteQueue(@PathVariable("name") final String queueName) {
         return queueOperationProviderService.deleteQueue(queueName);
     }
 

@@ -138,7 +138,8 @@ dockerCompose {
             useComposeFiles = ["docker/slurm/docker-compose.yaml"]
             startedServices = ['mysql', 'slurmdbd', 'slurmctld', 'worker1', 'worker2']
             break
-        default: if (targetEngine) throw new RuntimeException("Unknown engine type was specified: " + targetEngine)
+        default:
+            if (targetEngine) throw new RuntimeException("Unknown engine type was specified: " + targetEngine)
     }
     projectName = 'grid-engine-api'
 }

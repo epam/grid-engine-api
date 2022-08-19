@@ -366,7 +366,7 @@ DELETE /jobs
 
 
 ##### Description
-Tries to delete one or more jobs by username or id. If successful, returns the message and information about deleted job
+Tries to delete one or more jobs by username or ids. If successful, returns the message and information about deleted jobs
 
 
 ##### Parameters
@@ -1302,7 +1302,7 @@ Returns the list which contains information about queues with respect to provide
 <a name="deletequeueusingdelete"></a>
 #### Delete queue
 ```
-DELETE /queues/{queue_name}
+DELETE /queues/{name}
 ```
 
 
@@ -1314,7 +1314,7 @@ Deletes one or more queues
 
 |Type|Name|Description|Schema|
 |---|---|---|---|
-|**Path**|**queue_name**  <br>*required*|queue_name|string|
+|**Path**|**name**  <br>*required*|name|string|
 
 
 ##### Responses
