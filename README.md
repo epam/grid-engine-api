@@ -71,13 +71,6 @@ The figure shows schematically how the application is arranged. It is logically 
 
 ![grid-engine-api-diag](docs/attachments/images/grid-engine-api-diagram.png)
 
-Now lets see with example how application works:
-- A client sends a request to GRID-ENGINE-API.
-- At the controller layer the request is processed by the appropriate controller and redirected to the service layer.
-- At the service layer a required grid engine type and an appropriate provider are determined.
-- Then the determined provider refers to the corresponding grid engine client, gets output, maps it to `unified` object
-model  and returns it back to the Rest API client.
-
 ### API Reference
 _____
 API Reference docs can be found [here](docs/api) 
