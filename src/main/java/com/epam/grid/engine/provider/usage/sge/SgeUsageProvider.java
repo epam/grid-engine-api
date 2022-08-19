@@ -33,6 +33,7 @@ import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.sge.usage.SgeSummaryFilteredAccountingDataParser;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thymeleaf.context.Context;
@@ -51,6 +52,7 @@ import java.util.stream.Stream;
 @Service
 @AllArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeUsageProvider implements UsageProvider {
 
     private static final String QACCT_COMMAND = "qacct";

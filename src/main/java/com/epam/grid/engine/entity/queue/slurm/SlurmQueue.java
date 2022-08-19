@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.entity.queue.slurm;
 
+import com.epam.grid.engine.entity.host.slurm.SlurmHost;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,31 +35,6 @@ public class SlurmQueue {
      * Partition state: up or down.
      */
     private String avail;
-
-    /**
-     * Count of CPUs (processors) on each node.
-     */
-    private int cpus;
-
-    /**
-     * Count of sockets (S), cores (C), and threads (T) on these nodes.
-     */
-    private String socketsCoresThreads;
-
-    /**
-     * Count of sockets on these nodes.
-     */
-    private int sockets;
-
-    /**
-     * Count of cores on these nodes.
-     */
-    private int cores;
-
-    /**
-     * Count of threads on these nodes.
-     */
-    private int threads;
 
     /**
      * Resource allocations in this partition  are  restricted  to  the named  groups. ALL  indicates  that  all
@@ -80,19 +56,9 @@ public class SlurmQueue {
     private String timelimit;
 
     /**
-     * Size of real memory in megabytes on these nodes.
-     */
-    private long memory;
-
-    /**
      * Nodelist or BP_LIST (BlueGene systems only). Names of nodes associated with this configuration/partition.
      */
-    private List<String> nodelist;
-
-    /**
-     * Count of nodes with this particular configuration.
-     */
-    private int nodes;
+    private List<SlurmHost> nodelist;
 
     /**
      * Count  of nodes with this particular configuration by node state in the form "available/idle".
@@ -130,9 +96,4 @@ public class SlurmQueue {
      * and unk respectively. Note that the suffix "*" identifies nodes that are presently not responding.
      */
     private String state;
-
-    /**
-     * Size of temporary disk space in megabytes on these nodes.
-     */
-    private long tmpDisk;
 }

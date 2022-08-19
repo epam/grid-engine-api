@@ -123,8 +123,8 @@ public class SlurmJobProvider implements JobProvider {
     @Override
     public Job runJob(final JobOptions options, final String logDir) {
         if (options.getParallelEnvOptions() != null) {
-            throw new UnsupportedOperationException("Unsupported option was specified, for SLURM engine please "
-                    + "use ParallelExecutionOptions");
+            throw new UnsupportedOperationException("Parallel Environment is not supported for SLURM engine,"
+                    + " please use ParallelExecutionOptions");
         }
         if (checkParallelExecutionOptions(options.getParallelExecutionOptions())) {
             throw new GridEngineException(HttpStatus.BAD_REQUEST, "All Parallel execution options except Exclusive "

@@ -12,7 +12,7 @@ qtype                 BATCH INTERACTIVE
 ckpt_list             NONE
 pe_list               [(${peList})]
 rerun                 FALSE
-slots                 1
+slots                 9999
 tmpdir                /tmp
 shell                 /bin/sh
 prolog                NONE

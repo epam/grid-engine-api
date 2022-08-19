@@ -147,7 +147,7 @@ public class GridEngineCommandCompilerImplTest {
     private static final String OWNER_LIST_DEFAULT = "NONE";
     private static final String USER_LIST_DEFAULT = "arusers";
 
-    private static final String CREATED_QUEUE =
+    private static final String EXPECTED_CREATED_QUEUE =
                      "qname                 " + QUEUE + NEW_LINE_DELIMITER
                    + "hostlist              " + SOME_HOSTLIST + NEW_LINE_DELIMITER
                    + "seq_no                0" + NEW_LINE_DELIMITER
@@ -162,7 +162,7 @@ public class GridEngineCommandCompilerImplTest {
                    + "ckpt_list             NONE" + NEW_LINE_DELIMITER
                    + "pe_list               " + PE_LIST_DEFAULT + NEW_LINE_DELIMITER
                    + "rerun                 FALSE" + NEW_LINE_DELIMITER
-                   + "slots                 1" + NEW_LINE_DELIMITER
+                   + "slots                 9999" + NEW_LINE_DELIMITER
                    + "tmpdir                /tmp" + NEW_LINE_DELIMITER
                    + "shell                 /bin/sh" + NEW_LINE_DELIMITER
                    + "prolog                NONE" + NEW_LINE_DELIMITER
@@ -481,7 +481,7 @@ public class GridEngineCommandCompilerImplTest {
         contextForCreateQueue.setVariable(USER_LIST_FIELD, USER_LIST_DEFAULT);
 
         return Stream.of(
-                Arguments.of(CommandType.SGE, QUEUE_ENTITY, contextForCreateQueue, CREATED_QUEUE)
+                Arguments.of(CommandType.SGE, QUEUE_ENTITY, contextForCreateQueue, EXPECTED_CREATED_QUEUE)
         );
     }
 

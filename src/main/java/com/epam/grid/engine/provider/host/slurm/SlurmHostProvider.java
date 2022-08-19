@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 public class SlurmHostProvider implements HostProvider {
 
     private static final String FILTER = "filter";
-    private static final String SCONTROL_COMMAND = "scontrol";
+    private static final String SCONTROL_SHOW_NODE_COMMAND = "scontrol_show_node";
 
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final GridEngineCommandCompiler commandCompiler;
@@ -67,7 +67,8 @@ public class SlurmHostProvider implements HostProvider {
     public Listing<Host> listHosts(final HostFilter hostFilter) {
         final Context context = new Context();
         context.setVariable(FILTER, hostFilter);
-        final String[] hostCommand = commandCompiler.compileCommand(getProviderType(), SCONTROL_COMMAND, context);
+        final String[] hostCommand = commandCompiler.compileCommand(
+                getProviderType(), SCONTROL_SHOW_NODE_COMMAND, context);
         final CommandResult commandResult = simpleCmdExecutor.execute(hostCommand);
         if (commandResult.getExitCode() != 0) {
             CommandsUtils.throwExecutionDetails(commandResult);
