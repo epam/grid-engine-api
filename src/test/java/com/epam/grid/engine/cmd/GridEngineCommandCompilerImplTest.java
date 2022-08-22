@@ -19,7 +19,7 @@
 
 package com.epam.grid.engine.cmd;
 
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.HostFilter;
 import com.epam.grid.engine.entity.HostGroupFilter;
 import com.epam.grid.engine.entity.QueueFilter;
@@ -62,7 +62,6 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.RUNNING_S
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SPACE;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SUSPENDED_STRING;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.ZOMBIE_STRING;
-import static com.epam.grid.engine.utils.TextConstants.EQUAL_SIGN;
 import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
@@ -104,6 +103,7 @@ public class GridEngineCommandCompilerImplTest {
     private static final String QMASTER_PORT_STRING = "qmasterPort";
     private static final String QMASTER_STRING = "qmaster";
     private static final String ONE = "1";
+    private static final long ONE_LONG = Long.parseLong(ONE);
     private static final String SOME_HOST = "someHost";
     private static final String SOME_HOST2 = "someHost2";
     private static final String CURRENT_HOSTS = "current_host";
@@ -147,7 +147,7 @@ public class GridEngineCommandCompilerImplTest {
     private static final String OWNER_LIST_DEFAULT = "NONE";
     private static final String USER_LIST_DEFAULT = "arusers";
 
-    private static final String CREATED_QUEUE =
+    private static final String EXPECTED_CREATED_QUEUE =
                      "qname                 " + QUEUE + NEW_LINE_DELIMITER
                    + "hostlist              " + SOME_HOSTLIST + NEW_LINE_DELIMITER
                    + "seq_no                0" + NEW_LINE_DELIMITER
@@ -162,7 +162,7 @@ public class GridEngineCommandCompilerImplTest {
                    + "ckpt_list             NONE" + NEW_LINE_DELIMITER
                    + "pe_list               " + PE_LIST_DEFAULT + NEW_LINE_DELIMITER
                    + "rerun                 FALSE" + NEW_LINE_DELIMITER
-                   + "slots                 1" + NEW_LINE_DELIMITER
+                   + "slots                 9999" + NEW_LINE_DELIMITER
                    + "tmpdir                /tmp" + NEW_LINE_DELIMITER
                    + "shell                 /bin/sh" + NEW_LINE_DELIMITER
                    + "prolog                NONE" + NEW_LINE_DELIMITER
@@ -214,9 +214,9 @@ public class GridEngineCommandCompilerImplTest {
     private static final String QUEUES_OPTION = "-q";
     private static final String ENV_VAR_OPTION = "-v";
     private static final String ENV_VAR_KEY = "myVarKey";
-    private static final String ENV_VAR_VALUE = "some";
-    private static final String ENV_VAR_MAP_ENTRY = "myVarKey=some";
-    private static final String ENV_VAR_MAP_ONLY_KEY = "myVarKey";
+    private static final String ENV_VAR_VALUE = "some value with spaces";
+    private static final String ENV_VAR_MAP_ENTRY = String.format("%s=\"%s\"", ENV_VAR_KEY, ENV_VAR_VALUE);
+    private static final String ENV_VAR_MAP_ONLY_KEY = ENV_VAR_KEY;
     private static final String PARALLEL_ENV_OPTION = "-pe";
     private static final String PE_NAME = "smp";
     private static final String PE_MIN_PARAM = "1";
@@ -225,13 +225,14 @@ public class GridEngineCommandCompilerImplTest {
     private static final String ARG1 = "arg1";
     private static final String ARG2 = "arg2";
     private static final String OPTIONS = "options";
+    private static final String ARGUMENTS = "arguments";
     private static final String ENV_VARIABLES = "envVariables";
 
     private static final String LOG_DIR = "logDir";
     private static final String SOME_PATH_TEMPLATE = "/home/%d.err";
-    private static final String SOME_LOG_DIR = "/my/log/dir/";
-    private static final String ERR_LOG_PATH = SOME_LOG_DIR + "$JOB_ID.err";
-    private static final String OUT_LOG_PATH = SOME_LOG_DIR + "$JOB_ID.out";
+    private static final String SOME_LOG_DIR = "/my/log/dir";
+    private static final String ERR_LOG_PATH = SOME_LOG_DIR + "/$JOB_ID.err";
+    private static final String OUT_LOG_PATH = SOME_LOG_DIR + "/$JOB_ID.out";
 
     private static final String PATH = "path";
     private static final String N_KEY = "-n";
@@ -276,7 +277,7 @@ public class GridEngineCommandCompilerImplTest {
     @MethodSource("provideQconfCommands")
     public void shouldReturnCommandWithSelectedHostGroup(final Context context,
                                                          final String[] sample) {
-        final String[] command = commandCompiler.compileCommand(EngineType.SGE, QCONF_COMMAND, context);
+        final String[] command = commandCompiler.compileCommand(CommandType.SGE, QCONF_COMMAND, context);
         Assertions.assertEquals(Arrays.toString(sample), Arrays.toString(command));
     }
 
@@ -300,7 +301,7 @@ public class GridEngineCommandCompilerImplTest {
     @Test
     public void shouldReturnSimpleHostCommand() {
         final String[] sample = new String[]{QHOST_COMMAND, TYPE_XML};
-        final String[] command = commandCompiler.compileCommand(EngineType.SGE, QHOST_COMMAND, new Context());
+        final String[] command = commandCompiler.compileCommand(CommandType.SGE, QHOST_COMMAND, new Context());
         Assertions.assertEquals(Arrays.toString(sample), Arrays.toString(command));
     }
 
@@ -309,7 +310,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context hostFilter = new Context();
         hostFilter.setVariable(FILTER_FIELD_NAME, new HostFilter(List.of(CURRENT_HOSTS)));
         final String[] sample = new String[]{QHOST_COMMAND, H_COMMAND, CURRENT_HOSTS, TYPE_XML};
-        final String[] command = commandCompiler.compileCommand(EngineType.SGE, QHOST_COMMAND, hostFilter);
+        final String[] command = commandCompiler.compileCommand(CommandType.SGE, QHOST_COMMAND, hostFilter);
         Assertions.assertEquals(Arrays.toString(sample), Arrays.toString(command));
     }
 
@@ -318,20 +319,20 @@ public class GridEngineCommandCompilerImplTest {
         final Context hostFilter = new Context();
         hostFilter.setVariable(FILTER_FIELD_NAME, new HostFilter(List.of(CURRENT_HOSTS_1, CURRENT_HOSTS_2)));
         final String[] sample = new String[]{QHOST_COMMAND, H_COMMAND, CURRENT_HOSTS_1, CURRENT_HOSTS_2, TYPE_XML};
-        final String[] command = commandCompiler.compileCommand(EngineType.SGE, QHOST_COMMAND, hostFilter);
+        final String[] command = commandCompiler.compileCommand(CommandType.SGE, QHOST_COMMAND, hostFilter);
         Assertions.assertEquals(Arrays.toString(sample), Arrays.toString(command));
     }
 
     @Test
     public void shouldReturnOnlyQacctCommandWhenGetEmptyRequest() {
         Assertions.assertEquals(QACCT_COMMAND,
-                commandCompiler.compileCommand(EngineType.SGE, QACCT_COMMAND, new Context())[0]);
+                commandCompiler.compileCommand(CommandType.SGE, QACCT_COMMAND, new Context())[0]);
     }
 
     @ParameterizedTest
     @MethodSource("provideQacctJobFilterWithOneFieldAndExpectedCommand")
     public void shouldReturnQacctCommandWithSelectedKey(final Context filter, final String[] command) {
-        assertArrayEquals(command, commandCompiler.compileCommand(EngineType.SGE, QACCT_COMMAND, filter));
+        assertArrayEquals(command, commandCompiler.compileCommand(CommandType.SGE, QACCT_COMMAND, filter));
     }
 
     static Stream<Arguments> provideQacctJobFilterWithOneFieldAndExpectedCommand() {
@@ -372,7 +373,7 @@ public class GridEngineCommandCompilerImplTest {
         context.setVariable(QMASTER_HOST_STRING, qmasterHost);
         context.setVariable(QMASTER_PORT_STRING, qmasterPort);
 
-        final String[] result = commandCompiler.compileCommand(EngineType.SGE, QPING_COMMAND, context);
+        final String[] result = commandCompiler.compileCommand(CommandType.SGE, QPING_COMMAND, context);
         assertArrayEquals(new String[]{QPING_COMMAND, INFO_KEY, qmasterHost, qmasterPort, QMASTER_STRING, ONE}, result);
     }
 
@@ -386,7 +387,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(QMASTER_HOST_PATH_STRING, qmasterHostPath);
 
-        final String[] result = commandCompiler.compileCommand(EngineType.SGE, DEFINE_QMASTER_COMMAND, context);
+        final String[] result = commandCompiler.compileCommand(CommandType.SGE, DEFINE_QMASTER_COMMAND, context);
         assertArrayEquals(new String[]{CAT_COMMAND, qmasterHostPath}, result);
     }
 
@@ -404,7 +405,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context parallelEnvName = new Context();
         parallelEnvName.setVariable(PE_NAME_CONTEXT_VAR, EXPECTED_PE_NAME);
         final String[] expected = new String[]{QCONF_COMMAND, DELETE_PE_KEY, EXPECTED_PE_NAME};
-        final String[] actual = commandCompiler.compileCommand(EngineType.SGE, QCONF_PE_DELETION, parallelEnvName);
+        final String[] actual = commandCompiler.compileCommand(CommandType.SGE, QCONF_PE_DELETION, parallelEnvName);
         assertArrayEquals(expected, actual);
     }
 
@@ -414,7 +415,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(FILTER_FIELD_NAME,
                 QueueFilter.builder().queues(queues).build());
-        assertArrayEquals(command, commandCompiler.compileCommand(EngineType.SGE, QCONF_SQL, context));
+        assertArrayEquals(command, commandCompiler.compileCommand(CommandType.SGE, QCONF_SQL, context));
     }
 
     static Stream<Arguments> provideParametersForQueueListingCommandCreation() {
@@ -433,7 +434,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(QUEUE_FIELD_NAME, QUEUE);
         final String[] command = new String[]{QCONF_COMMAND, DQ, QUEUE};
-        assertArrayEquals(command, commandCompiler.compileCommand(EngineType.SGE, QCONF_DQ, context));
+        assertArrayEquals(command, commandCompiler.compileCommand(CommandType.SGE, QCONF_DQ, context));
     }
 
     @Test
@@ -441,7 +442,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(TEMP_FILE_FIELD_NAME, TEMP_FILE_PATH);
         final String[] command = new String[]{QCONF_COMMAND, AQ, TEMP_FILE_PATH};
-        assertArrayEquals(command, commandCompiler.compileCommand(EngineType.SGE, QCONF_AQ, context));
+        assertArrayEquals(command, commandCompiler.compileCommand(CommandType.SGE, QCONF_AQ, context));
     }
 
     @Test
@@ -449,14 +450,14 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(TEMP_FILE_FIELD_NAME, TEMP_FILE_PATH);
         final String[] command = new String[]{QCONF_COMMAND, MQ, TEMP_FILE_PATH};
-        assertArrayEquals(command, commandCompiler.compileCommand(EngineType.SGE, QCONF_MQ, context));
+        assertArrayEquals(command, commandCompiler.compileCommand(CommandType.SGE, QCONF_MQ, context));
     }
 
     @ParameterizedTest
     @MethodSource("provideParametersForCompilingEntityConfigFile")
-    public void shouldCompileEntityConfigFile(final EngineType engineType, final String entity,
+    public void shouldCompileEntityConfigFile(final CommandType commandType, final String entity,
                                               final Context context, final String expected) {
-        final Path pathToTempFile = commandCompiler.compileEntityConfigFile(engineType, entity, context);
+        final Path pathToTempFile = commandCompiler.compileEntityConfigFile(commandType, entity, context);
 
         Assertions.assertNotEquals(null, pathToTempFile);
         Assertions.assertTrue(pathToTempFile.isAbsolute());
@@ -480,7 +481,7 @@ public class GridEngineCommandCompilerImplTest {
         contextForCreateQueue.setVariable(USER_LIST_FIELD, USER_LIST_DEFAULT);
 
         return Stream.of(
-                Arguments.of(EngineType.SGE, QUEUE_ENTITY, contextForCreateQueue, CREATED_QUEUE)
+                Arguments.of(CommandType.SGE, QUEUE_ENTITY, contextForCreateQueue, EXPECTED_CREATED_QUEUE)
         );
     }
 
@@ -493,7 +494,7 @@ public class GridEngineCommandCompilerImplTest {
         context.setVariable("path", path);
         context.setVariable("lines", lines);
         context.setVariable("fromHead", fromHead);
-        final String[] result = commandCompiler.compileCommand(EngineType.SGE, "get_log_lines", context);
+        final String[] result = commandCompiler.compileCommand(CommandType.COMMON, "get_log_lines", context);
 
         assertArrayEquals(new String[]{linuxCommand, N_KEY, lines, path}, result);
     }
@@ -509,7 +510,7 @@ public class GridEngineCommandCompilerImplTest {
     public void testGetLogFileInfoTemplateResolving(final String path) {
         final Context context = new Context();
         context.setVariable(PATH, path);
-        final String[] result = commandCompiler.compileCommand(EngineType.SGE, "get_logfile_info", context);
+        final String[] result = commandCompiler.compileCommand(CommandType.COMMON, "get_logfile_info", context);
 
         assertArrayEquals(new String[]{"wc", "-l", "-c", path}, result);
     }
@@ -521,7 +522,7 @@ public class GridEngineCommandCompilerImplTest {
 
     @Test
     public void shouldReturnPeListingCommandSpl() {
-        final String[] actual = commandCompiler.compileCommand(EngineType.SGE, QCONF_SPL, new Context());
+        final String[] actual = commandCompiler.compileCommand(CommandType.SGE, QCONF_SPL, new Context());
         assertArrayEquals(new String[]{QCONF_COMMAND, SPL}, actual);
     }
 
@@ -530,7 +531,7 @@ public class GridEngineCommandCompilerImplTest {
         final ParallelEnvFilter peFilter = ParallelEnvFilter.builder().parallelEnvs(List.of(PE_MAKE, PE_MSI)).build();
         final Context context = new Context();
         context.setVariable(FILTER_FIELD_NAME, peFilter);
-        final String[] actual = commandCompiler.compileCommand(EngineType.SGE, QCONF_SP, context);
+        final String[] actual = commandCompiler.compileCommand(CommandType.SGE, QCONF_SP, context);
         assertArrayEquals(new String[]{QCONF_COMMAND, SP, PE_MAKE, SP, PE_MSI}, actual);
     }
 
@@ -541,7 +542,8 @@ public class GridEngineCommandCompilerImplTest {
         final JobOptions jobOptions = jobOptionsBuilder.build();
         final Context context = new Context();
         context.setVariable(OPTIONS, jobOptions);
-        assertArrayEquals(expectedCommand, commandCompiler.compileCommand(EngineType.SGE, QSUB, context));
+        context.setVariable(ARGUMENTS, CommandArgUtils.toEscapeQuotes(jobOptions.getArguments()));
+        assertArrayEquals(expectedCommand, commandCompiler.compileCommand(CommandType.SGE, QSUB, context));
     }
 
     static Stream<Arguments> provideValidParameters() {
@@ -554,7 +556,7 @@ public class GridEngineCommandCompilerImplTest {
                         new String[]{QSUB, NAME_OPTION, JOB_NAME, JOB_COMMAND}),
                 Arguments.of(getSimpleJobCommand().workingDir(WORK_DIR_NAME),
                         new String[]{QSUB, WORK_DIR_OPTION, WORK_DIR_NAME, JOB_COMMAND}),
-                Arguments.of(getSimpleJobCommand().priority(Integer.parseInt(PRIORITY)),
+                Arguments.of(getSimpleJobCommand().priority(Long.parseLong(PRIORITY)),
                         new String[]{QSUB, PRIORITY_OPTION, PRIORITY, JOB_COMMAND}),
                 Arguments.of(getSimpleJobCommand().queues(List.of(QUEUE, QUEUE2)),
                         new String[]{QSUB, QUEUES_OPTION, QUEUE, QUEUE2, JOB_COMMAND}),
@@ -576,7 +578,7 @@ public class GridEngineCommandCompilerImplTest {
         final String[] expectedCommand = new String[]{QSUB, ERR_PATH_OPTION, ERR_LOG_PATH,
                                                       OUT_PATH_OPTION, OUT_LOG_PATH, JOB_COMMAND};
 
-        assertArrayEquals(expectedCommand, commandCompiler.compileCommand(EngineType.SGE, QSUB, context));
+        assertArrayEquals(expectedCommand, commandCompiler.compileCommand(CommandType.SGE, QSUB, context));
     }
 
     @ParameterizedTest
@@ -587,15 +589,15 @@ public class GridEngineCommandCompilerImplTest {
         final JobOptions jobOptions = jobOptionsBuilder.build();
         final Context context = new Context();
         context.setVariable(OPTIONS, jobOptions);
-        context.setVariable(ENV_VARIABLES, envVariables);
-        assertArrayEquals(expectedCommand, commandCompiler.compileCommand(EngineType.SGE, QSUB, context));
+        context.setVariable(ENV_VARIABLES, CommandArgUtils.toEscapeQuotes(envVariables));
+        assertArrayEquals(expectedCommand, commandCompiler.compileCommand(CommandType.SGE, QSUB, context));
     }
 
     static Stream<Arguments> provideValidParametersWithEnvVariables() {
         return Stream.of(
-                Arguments.of(getSimpleJobCommand(), ENV_VAR_KEY.concat(EQUAL_SIGN).concat(ENV_VAR_VALUE),
+                Arguments.of(getSimpleJobCommand(), ENV_VAR_MAP_ENTRY,
                         new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_MAP_ENTRY, JOB_COMMAND}),
-                Arguments.of(getSimpleJobCommand(), ENV_VAR_KEY,
+                Arguments.of(getSimpleJobCommand(), ENV_VAR_MAP_ONLY_KEY,
                         new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_MAP_ONLY_KEY, JOB_COMMAND})
         );
     }
@@ -605,7 +607,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(TEMP_FILE_FIELD_NAME, TEMP_FILE_PATH);
         final String[] command = new String[]{QCONF_COMMAND, CREATE_PE_KEY, TEMP_FILE_PATH};
-        assertArrayEquals(command, commandCompiler.compileCommand(EngineType.SGE, PE_CREATION_COMMAND, context));
+        assertArrayEquals(command, commandCompiler.compileCommand(CommandType.SGE, PE_CREATION_COMMAND, context));
     }
 
     private static String getPropertyValue(final String propertyName) {
@@ -650,7 +652,7 @@ public class GridEngineCommandCompilerImplTest {
             context.setVariable(JOB_STATE, jobState);
         }
         assertArrayEquals(expectedCommand,
-                commandCompiler.compileCommand(EngineType.SGE, QSTAT_COMMAND, context));
+                commandCompiler.compileCommand(CommandType.SGE, QSTAT_COMMAND, context));
     }
 
     static Stream<Arguments> provideGoodParameters() {
@@ -682,7 +684,7 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(JOB_FILTER, null);
         assertArrayEquals(new String[]{QSTAT_COMMAND, TYPE_XML},
-                commandCompiler.compileCommand(EngineType.SGE, QSTAT_COMMAND, context));
+                commandCompiler.compileCommand(CommandType.SGE, QSTAT_COMMAND, context));
     }
 
     @ParameterizedTest
@@ -692,22 +694,22 @@ public class GridEngineCommandCompilerImplTest {
         final Context context = new Context();
         context.setVariable(JOB_FILTER, filter);
         assertArrayEquals(expectedCommand,
-                commandCompiler.compileCommand(EngineType.SGE, QDEL_COMMAND, context));
+                commandCompiler.compileCommand(CommandType.SGE, QDEL_COMMAND, context));
     }
 
     static Stream<Arguments> provideDeleteJobFilterAndExpectedCommand() {
         return Stream.of(
                 Arguments.of(
-                        DeleteJobFilter.builder().force(true).id(1L).user(SGEUSER).build(),
+                        DeleteJobFilter.builder().force(true).ids(List.of(ONE_LONG)).user(SGEUSER).build(),
                         new String[]{QDEL_COMMAND, FORCED_QDEL, USER_QDEL, SGEUSER, ONE}),
                 Arguments.of(
-                        DeleteJobFilter.builder().force(false).id(1L).user(SGEUSER).build(),
+                        DeleteJobFilter.builder().force(false).ids(List.of(ONE_LONG)).user(SGEUSER).build(),
                         new String[]{QDEL_COMMAND, USER_QDEL, SGEUSER, ONE}),
                 Arguments.of(
                         DeleteJobFilter.builder().force(false).user(SGEUSER).build(),
                         new String[]{QDEL_COMMAND, USER_QDEL, SGEUSER}),
                 Arguments.of(
-                        DeleteJobFilter.builder().force(false).id(1L).build(),
+                        DeleteJobFilter.builder().force(false).ids(List.of(ONE_LONG)).build(),
                         new String[]{QDEL_COMMAND, ONE})
         );
     }

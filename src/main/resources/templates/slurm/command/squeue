@@ -1,0 +1,21 @@
+squeue -o %all
+[# th:if="${filter != null}"]
+    [# th:if="${not #lists.isEmpty(filter.owners)}"]
+        -u
+        [# th:text="${#strings.listJoin(filter.owners, ',')}"]
+        [/]
+    [/]
+    [# th:if="${not #lists.isEmpty(filter.names)}"]
+        -n
+        [# th:text="${#strings.listJoin(filter.names, ',')}"]
+        [/]
+    [/]
+    [# th:if="${not #lists.isEmpty(filter.ids)}"]
+        -j
+        [# th:text="${#strings.listJoin(filter.ids, ',')}"]
+        [/]
+    [/]
+    [# th:if="${filter.state != null}"]
+        -t [(${filter.state})]
+    [/]
+[/]

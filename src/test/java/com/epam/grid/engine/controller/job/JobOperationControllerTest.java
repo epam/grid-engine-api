@@ -65,7 +65,7 @@ public class JobOperationControllerTest extends AbstractControllerTest {
     private static final String SGEUSER = "sgeuser";
     private static final String EMPTY_STRING = "";
 
-    private static final int SOME_JOB_ID = 10;
+    private static final long SOME_JOB_ID = 10;
     private static final String NUMBER_OF_LINES = "1";
     private static final String FROM_HEAD_VALUE = "false";
     private static final String SOME_JOB_NAME = "someJobName";
@@ -114,22 +114,18 @@ public class JobOperationControllerTest extends AbstractControllerTest {
     public void shouldReturnJsonValueAndOkStatusForDeletion() throws Exception {
         final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
                 .force(false)
-                .id(1L)
+                .ids(List.of(SOME_JOB_ID))
                 .user(SGEUSER)
                 .build();
-        final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
-                .user(SGEUSER)
-                .build();
-
-        doReturn(expectedDeletedJobInfo).when(jobOperationProviderService).deleteJob(deleteJobFilter);
+        final Listing<DeletedJobInfo> expectedResult = new Listing<>(List.of(new DeletedJobInfo(SOME_JOB_ID, SGEUSER)));
+        doReturn(expectedResult).when(jobOperationProviderService).deleteJob(deleteJobFilter);
 
         final MvcResult mvcResult =
                 performMvcResultWithContent(MockMvcRequestBuilders.delete(URI), deleteJobFilter);
 
         verify(jobOperationProviderService).deleteJob(deleteJobFilter);
         final String actual = mvcResult.getResponse().getContentAsString();
-        assertThat(actual).isEqualToIgnoringWhitespace(objectMapper.writeValueAsString(expectedDeletedJobInfo));
+        assertThat(actual).isEqualToIgnoringWhitespace(objectMapper.writeValueAsString(expectedResult));
     }
 
     @ParameterizedTest
@@ -154,17 +150,17 @@ public class JobOperationControllerTest extends AbstractControllerTest {
         return Stream.of(
                 Arguments.of(HttpStatus.NOT_FOUND, DeleteJobFilter.builder()
                         .force(false)
-                        .id(1L)
+                        .ids(List.of(SOME_JOB_ID))
                         .user(SGEUSER)
                         .build()),
                 Arguments.of(HttpStatus.BAD_REQUEST, DeleteJobFilter.builder()
                         .force(false)
-                        .id(0L)
+                        .ids(List.of(0L))
                         .user(SGEUSER)
                         .build()),
                 Arguments.of(HttpStatus.INTERNAL_SERVER_ERROR, DeleteJobFilter.builder()
                         .force(true)
-                        .id(2L)
+                        .ids(List.of(2L))
                         .user(SGEUSER)
                         .build())
         );

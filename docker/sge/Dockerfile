@@ -7,7 +7,10 @@ ARG JAVA_DISTRO_URL="http://ppa.launchpad.net/openjdk-r/ppa/ubuntu/pool/main/o/o
 RUN apt-get -y update && \
     curl $JAVA_DISTRO_URL -o /tmp/java_distr.deb && \
     apt-get install -y /tmp/java_distr.deb && \
-    rm -rf /tmp/java_distr.deb
+    rm -rf /tmp/java_distr.deb && \
+    mkdir /mnt/grid-engine-api \
+          /mnt/grid-engine-api/logs && \
+    chmod ugo+rw /mnt/grid-engine-api/logs
 COPY ./build/libs /opt
 
 EXPOSE 8080

@@ -22,7 +22,7 @@ package com.epam.grid.engine.provider.queue;
 import com.epam.grid.engine.entity.QueueFilter;
 import com.epam.grid.engine.entity.queue.Queue;
 import com.epam.grid.engine.entity.queue.QueueVO;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * The interface which provides methods for different
  * types of grid engines to operate with {@link Queue}.
  */
-public interface QueueProvider extends GridProviderAware {
+public interface QueueProvider extends CommandTypeAware {
 
     /**
      * Returns a List containing Queues.
@@ -55,18 +55,18 @@ public interface QueueProvider extends GridProviderAware {
     Queue deleteQueues(String queueName);
 
     /**
-     * Registers a {@code queue} with specified properties in grid engine system.
+     * Registers a queue with specified properties in grid engine system.
      *
      * @param registrationRequest the properties of the queue to be registered
-     * @return the registered {@code queue}
+     * @return the registered {@link Queue}
      */
     Queue registerQueue(QueueVO registrationRequest);
 
     /**
-     * Updates a {@code queue} with specified properties in grid engine system.
+     * Updates a queue with specified properties in grid engine system.
      *
      * @param updateRequest the properties of the queue to be updated
-     * @return the updated {@code queue}
+     * @return the updated {@link Queue}
      */
     Queue updateQueue(QueueVO updateRequest);
 }

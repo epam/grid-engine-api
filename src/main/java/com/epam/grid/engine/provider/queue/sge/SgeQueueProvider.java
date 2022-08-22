@@ -22,7 +22,7 @@ package com.epam.grid.engine.provider.queue.sge;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.EntitiesRawOutput;
 import com.epam.grid.engine.entity.QueueFilter;
 import com.epam.grid.engine.entity.queue.Queue;
@@ -36,6 +36,7 @@ import com.epam.grid.engine.provider.utils.sge.common.SgeOutputParsingUtils;
 import com.epam.grid.engine.provider.utils.sge.queue.SgeDeleteQueueCommandUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -60,6 +61,7 @@ import static com.epam.grid.engine.utils.TextConstants.SPACE;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public class SgeQueueProvider implements QueueProvider {
 
     private static final String FILTER_PARAMETER = "filter";
@@ -107,8 +109,8 @@ public class SgeQueueProvider implements QueueProvider {
      * @return the engine type - Sun Grid Engine
      */
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SGE;
+    public CommandType getProviderType() {
+        return CommandType.SGE;
     }
 
     /**
@@ -156,11 +158,10 @@ public class SgeQueueProvider implements QueueProvider {
     }
 
     /**
-     * Registers a {@code queue} matching the requested description in the Sun Grid Engine queuing system.
+     * Registers a queue matching the requested description in the Sun Grid Engine queuing system.
      *
      * @param registrationRequest the description of the queue to be registered
-     * @return the registered {@code queue}
-     * @see Queue
+     * @return the registered {@link Queue}
      */
     @Override
     public Queue registerQueue(final QueueVO registrationRequest) {
@@ -193,11 +194,10 @@ public class SgeQueueProvider implements QueueProvider {
     }
 
     /**
-     * Updates a {@code queue} matching the requested description in the Sun Grid Engine queuing system.
+     * Updates a queue matching the requested description in the Sun Grid Engine queuing system.
      *
      * @param updateRequest the description of the queue to be updated
-     * @return the updated {@code queue}
-     * @see Queue
+     * @return the updated {@link Queue}
      */
     @Override
     public Queue updateQueue(final QueueVO updateRequest) {

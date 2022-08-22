@@ -21,12 +21,12 @@ package com.epam.grid.engine.provider.usage;
 
 import com.epam.grid.engine.entity.usage.UsageReport;
 import com.epam.grid.engine.entity.usage.UsageReportFilter;
-import com.epam.grid.engine.provider.GridProviderAware;
+import com.epam.grid.engine.provider.CommandTypeAware;
 
 /**
  * A provider for usage query operations.
  */
-public interface UsageProvider extends GridProviderAware {
+public interface UsageProvider extends CommandTypeAware {
 
     /**
      * This method provides usage summary information received from grid engine system

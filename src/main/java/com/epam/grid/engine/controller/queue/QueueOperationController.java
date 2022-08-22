@@ -116,7 +116,7 @@ public class QueueOperationController {
      * @param queueName An object with the task deletion parameters.
      * @return Which queues were deleted.
      */
-    @DeleteMapping("/{queue_name}")
+    @DeleteMapping("/{name}")
     @ResponseStatus(HttpStatus.OK)
     @ApiOperation(value = "Delete queue",
             notes = "Deletes one or more queues"
@@ -128,16 +128,15 @@ public class QueueOperationController {
             @ApiResponse(code = 404, message = QUEUE_NOT_FOUND),
             @ApiResponse(code = 500, message = INTERNAL_ERROR)
     })
-    public Queue deleteQueue(@PathVariable("queue_name") final String queueName) {
+    public Queue deleteQueue(@PathVariable("name") final String queueName) {
         return queueOperationProviderService.deleteQueue(queueName);
     }
 
     /**
-     * Registers a {@code queue} with specified in the {@link QueueVO} properties.
+     * Registers a queue with specified in the {@link QueueVO} properties.
      *
      * @param registrationRequest the properties of the queue to be registered
-     * @return the registered {@code queue}
-     * @see Queue
+     * @return the registered {@link Queue}
      */
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
@@ -157,11 +156,10 @@ public class QueueOperationController {
     }
 
     /**
-     * Updates a {@code queue} with specified in the {@link QueueVO} properties.
+     * Updates a queue with specified in the {@link QueueVO} properties.
      *
      * @param updateRequest the properties of the queue to be updated
-     * @return the updated {@code queue}
-     * @see Queue
+     * @return the updated {@link Queue}
      */
     @PutMapping
     @ResponseStatus(HttpStatus.OK)

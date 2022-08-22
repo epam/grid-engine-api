@@ -25,7 +25,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 
-import java.util.List;
+import java.util.Collection;
 
 import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
@@ -49,11 +49,11 @@ public final class CommandsUtils {
         throwExecutionDetails(result, HttpStatus.NOT_FOUND);
     }
 
-    public static String mergeOutputLines(final List<String> stdOut) {
-        return String.join(NEW_LINE_DELIMITER, stdOut);
+    public static String mergeOutputLines(final Collection<String> outputLines) {
+        return String.join(NEW_LINE_DELIMITER, outputLines);
     }
 
-    public static HttpStatus determineStatus(final List<String> result) {
+    public static HttpStatus determineStatus(final Collection<String> result) {
         final boolean requiredRoleMissing = result.stream()
                 .anyMatch(stdErr -> stdErr.endsWith(MUST_BE_MANAGER));
 

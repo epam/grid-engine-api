@@ -26,6 +26,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.List;
 
@@ -36,12 +37,13 @@ import java.util.List;
  * Grid Engine job status values</a>.
  */
 @Mapper(componentModel = "spring")
+@ConditionalOnProperty(name = "grid.engine.type", havingValue = "SGE")
 public interface SgeJobMapper {
 
     /**
      * The actual mapping method expects the source object as parameter and returns the target object.
      *
-     * @param sgeJob an mapping object
+     * @param sgeJob a mapping object
      * @return The mapped object
      */
     @Mapping(target = "state", ignore = true)
@@ -50,8 +52,8 @@ public interface SgeJobMapper {
     /**
      * The method maps the state attribute of the source object to the target object.
      *
-     * @param sgeJob an mapping object
-     * @param job    an target object
+     * @param sgeJob a mapping object
+     * @param job    a target object
      */
     @AfterMapping
     default void fillState(final SgeJob sgeJob, final @MappingTarget Job job) {

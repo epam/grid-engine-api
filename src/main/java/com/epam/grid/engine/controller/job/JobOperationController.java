@@ -103,8 +103,8 @@ public class JobOperationController extends AbstractRestController {
     @DeleteMapping
     @ResponseStatus(HttpStatus.OK)
     @ApiOperation(value = "Delete job",
-            notes = "Tries to delete one or more jobs by username, id or job name. If"
-                    + " successful, returns the message and information about deleted job"
+            notes = "Tries to delete one or more jobs by username or ids. If successful,"
+                    + " returns the message and information about deleted jobs"
     )
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = SUCCESSFULLY_DELETED),
@@ -112,7 +112,7 @@ public class JobOperationController extends AbstractRestController {
             @ApiResponse(code = 404, message = NOT_FOUND),
             @ApiResponse(code = 500, message = INTERNAL_ERROR)
     })
-    public DeletedJobInfo deleteJob(@RequestBody final DeleteJobFilter deleteJobFilter) {
+    public Listing<DeletedJobInfo> deleteJob(@RequestBody final DeleteJobFilter deleteJobFilter) {
         return providerService.deleteJob(deleteJobFilter);
     }
 
@@ -137,7 +137,7 @@ public class JobOperationController extends AbstractRestController {
     }
 
     /**
-     * Returns an requested job log lines and information about job log file.
+     * Returns a requested job log lines and information about job log file.
      *
      * @param jobId    The job identifier.
      * @param logType  The log file type to obtain information from.
@@ -158,7 +158,7 @@ public class JobOperationController extends AbstractRestController {
             @ApiResponse(code = 404, message = NOT_FOUND),
             @ApiResponse(code = 500, message = INTERNAL_ERROR),
     })
-    public JobLogInfo getJobLogInfo(@PathVariable(JOB_ID) final int jobId,
+    public JobLogInfo getJobLogInfo(@PathVariable(JOB_ID) final long jobId,
                                     @RequestParam(value = LOG_TYPE_ID,
                                             required = false, defaultValue = "ERR") final JobLogInfo.Type logType,
                                     @RequestParam(value = "lines",
@@ -183,7 +183,7 @@ public class JobOperationController extends AbstractRestController {
             @ApiResponse(code = 404, message = NOT_FOUND)
     })
     public void getJobLogFile(final HttpServletResponse response,
-                              @PathVariable(JOB_ID) final int jobId,
+                              @PathVariable(JOB_ID) final long jobId,
                               @RequestParam(LOG_TYPE_ID) final JobLogInfo.Type logType) {
         try (InputStream inputStream = providerService.getJobLogFile(jobId, logType)) {
             writeStreamToResponse(response, inputStream, String.format("%d.%s", jobId, logType.getSuffix()));

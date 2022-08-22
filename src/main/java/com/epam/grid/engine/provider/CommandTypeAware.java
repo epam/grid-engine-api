@@ -19,9 +19,9 @@
 
 package com.epam.grid.engine.provider;
 
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 
-public interface GridProviderAware {
+public interface CommandTypeAware {
 
-    EngineType getProviderType();
+    CommandType getProviderType();
 }

@@ -1,0 +1,5 @@
+scontrol -o show node
+[# th:if="${filter != null and not #lists.isEmpty(filter.hosts)}"]
+[# th:text="${#strings.listJoin(filter.hosts, ',')}"]
+ [/]
+[/]

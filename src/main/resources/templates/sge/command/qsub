@@ -21,8 +21,8 @@ qsub
         [/]
     [/]
 [/]
-[# th:if="${options.name != null}"]
--N [(${options.name})]
+[# th:if="${not #strings.isEmpty(options.name)}"]
+    -N [(${options.name})]
 [/]
 [# th:if="${not #lists.isEmpty(options.queues)}"]
 -q
@@ -30,19 +30,19 @@ qsub
     [(${queue})]
     [/]
 [/]
-[# th:if="${options.workingDir != null}"]
--wd [(${options.workingDir})]
+[# th:if="${not #strings.isEmpty(options.workingDir)}"]
+    -wd [(${options.workingDir})]
 [/]
 [# th:if="${logDir != null}"]
--e [(${logDir})]$JOB_ID.err
--o [(${logDir})]$JOB_ID.out
+    -e [(${logDir})]/$JOB_ID.err
+    -o [(${logDir})]/$JOB_ID.out
 [/]
-[# th:if="${envVariables != null}"]
--v [(${envVariables})]
+[# th:if="${not #strings.isEmpty(envVariables)}"]
+    -v "[(${envVariables})]"
 [/]
 [(${options.command})]
-[# th:if="${not #lists.isEmpty(options.arguments)}"]
-    [# th:each="argument : ${options.arguments}"]
-    [(${argument})]
+[# th:if="${not #lists.isEmpty(arguments)}"]
+    [# th:each="argument : ${arguments}"]
+    "[(${argument})]"
     [/]
 [/]

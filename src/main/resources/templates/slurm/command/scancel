@@ -1,0 +1,11 @@
+scancel -v
+[# th:if="${filter.force}"]
+    -H
+[/]
+[# th:if="${filter.user != null}"]
+    -u [(${filter.user})]
+[/]
+[# th:if="${not #lists.isEmpty(filter.ids)}"]
+    [# th:text="${#strings.listJoin(filter.ids, ',')}"]
+    [/]
+[/]

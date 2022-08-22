@@ -19,78 +19,57 @@
 
 package com.epam.grid.engine.service;
 
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.entity.HostFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.host.Host;
-import com.epam.grid.engine.provider.host.sge.SgeHostProvider;
+import com.epam.grid.engine.provider.host.HostProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class HostOperationProviderServiceTest {
 
-    private static final String TEST = "test-ip";
-    private static final String TYPE = "lx-amd64";
+    private static final String HOST_NAME = "test-ip";
 
     @Autowired
     HostOperationProviderService hostOperationProviderService;
 
-    @SpyBean
-    SgeHostProvider hostProvider;
+    @MockBean
+    HostProvider hostProvider;
 
     @Test
     public void shouldReturnCorrectResponse() {
-        final Listing<Host> hostListing = listingParser(listParser());
+        final Listing<Host> hostListing = new Listing<>(
+                List.of(Host.builder()
+                    .hostname(HOST_NAME)
+                    .typeOfArchitect("lx-amd64")
+                    .numOfProcessors(2)
+                    .numOfSocket(1)
+                    .numOfCore(1)
+                    .numOfThread(2)
+                    .load(0.0)
+                    .memTotal(3600000000L)
+                    .memUsed(311600000L)
+                    .totalSwapSpace(0.0)
+                    .usedSwapSpace(0.0)
+                    .build()));
+
         final HostFilter hostFilter = new HostFilter();
-        hostFilter.setHosts(Collections.singletonList(TEST));
+        hostFilter.setHosts(List.of(HOST_NAME));
 
         doReturn(hostListing).when(hostProvider).listHosts(hostFilter);
         Assertions.assertEquals(hostListing, hostOperationProviderService.filter(hostFilter));
         Mockito.verify(hostProvider, times(1)).listHosts(hostFilter);
-    }
-
-    private static List<Host> listParser() {
-        return Collections.singletonList(Host.builder()
-                .hostname(TEST)
-                .typeOfArchitect(TYPE)
-                .numOfProcessors(2)
-                .numOfSocket(1)
-                .numOfCore(1)
-                .numOfThread(2)
-                .load(0.0)
-                .memTotal(3600000000L)
-                .memUsed(311600000L)
-                .totalSwapSpace(0.0)
-                .usedSwapSpace(0.0)
-                .build());
-    }
-
-    private static Listing<Host> listingParser(final List<Host> hosts) {
-        return new Listing<>(hosts.stream()
-                .map(host -> Host.builder()
-                        .hostname(host.getHostname())
-                        .typeOfArchitect(host.getTypeOfArchitect())
-                        .numOfProcessors(host.getNumOfProcessors())
-                        .numOfSocket(host.getNumOfSocket())
-                        .numOfCore(host.getNumOfCore())
-                        .numOfThread(host.getNumOfThread())
-                        .load(host.getLoad())
-                        .memTotal(host.getMemTotal())
-                        .memUsed(host.getMemUsed())
-                        .totalSwapSpace(host.getTotalSwapSpace())
-                        .usedSwapSpace(host.getUsedSwapSpace())
-                        .build())
-                .collect(Collectors.toList()));
     }
 }

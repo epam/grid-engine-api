@@ -1,0 +1,52 @@
+sbatch --export
+[# th:if="${options.useAllEnvVars}"]
+    [# th:if="${#strings.isEmpty(envVariables)}"]
+        ALL
+    [/]
+    [# th:unless="${#strings.isEmpty(envVariables)}"]
+        "ALL,[(${envVariables})]"
+    [/]
+[/]
+[# th:unless="${options.useAllEnvVars}"]
+    [# th:if="${#strings.isEmpty(envVariables)}"]
+        NONE
+    [/]
+    [# th:unless="${#strings.isEmpty(envVariables)}"]
+        "[(${envVariables})]"
+    [/]
+[/]
+[# th:if="${options.priority != null && options.priority != 0}"]
+    --priority=[(${options.priority})]
+[/]
+[# th:if="${not #strings.isEmpty(options.name)}"]
+    --job-name=[(${options.name})]
+[/]
+[# th:if="${not #lists.isEmpty(options.queues)}"]
+    --partition=[# th:text="${#strings.listJoin(options.queues, ',')}"]
+    [/]
+[/]
+[# th:if="${options.ParallelExecutionOptions != null}"]
+    --ntasks=[(${options.ParallelExecutionOptions.numTasks})]
+    --nodes=[(${options.ParallelExecutionOptions.nodes})]
+    --cpus-per-task=[(${options.ParallelExecutionOptions.cpusPerTask})]
+    --ntasks-per-node=[(${options.ParallelExecutionOptions.numTasksPerNode})]
+    [# th:if="${options.ParallelExecutionOptions.exclusive}"]
+        --exclusive
+    [/]
+[/]
+[# th:if="${not #strings.isEmpty(options.workingDir)}"]
+    --chdir=[(${options.workingDir})]
+[/]
+-e [(${logDir})]/%A.err
+-o [(${logDir})]/%A.out
+[# th:if="${options.canBeBinary}"]
+    "--wrap=[(${binaryCommand})]"
+[/]
+[# th:unless="${options.canBeBinary}"]
+    [(${options.command})]
+    [# th:if="${not #lists.isEmpty(arguments)}"]
+        [# th:each="argument : ${arguments}"]
+        "[(${argument})]"
+        [/]
+    [/]
+[/]

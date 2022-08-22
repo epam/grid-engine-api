@@ -63,20 +63,12 @@ For more information please [see](docker/sge/README.md)
 ### System overview
 ____
 The figure shows schematically how the application is arranged. It is logically divided into three levels:
-1. API - provides an interface for interacting with the application;
-2. Service - connects the API with the provider;
-3. Provider - implements interaction of the application directly with the underlying client of the cluster
-(SGE, Slurm, etc).
+1. Controllers - provide an interface for interacting with the application;
+2. Services - contain common code (not related to any grid-engine: preprocessing, verification, etc.) and also connect the API with the provider;
+3. Providers - implement interaction of the application directly with the underlying client of the cluster (SGE, Slurm, etc.), file system, etc.
 
 
 ![grid-engine-api-diag](docs/attachments/images/grid-engine-api-diagram.png)
-
-Now lets see with example how application works:
-- A client sends a request to GRID-ENGINE-API.
-- At the controller layer the request is processed by the appropriate controller and redirected to the service layer.
-- At the service layer a required grid engine type and an appropriate provider are determined.
-- Then the determined provider refers to the corresponding grid engine client, gets output, maps it to `unified` object
-model  and returns it back to the Rest API client.
 
 ### API Reference
 _____

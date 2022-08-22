@@ -19,7 +19,7 @@
 
 package com.epam.grid.engine.cmd;
 
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import org.thymeleaf.context.IContext;
 
 import java.nio.file.Path;
@@ -32,20 +32,20 @@ public interface GridEngineCommandCompiler {
     /**
      * Creates the command structure by engine type and context.
      *
-     * @param engineType A grid engine type.
+     * @param commandType A command type.
      * @param command    Name of the command used.
      * @param context    Data for forming a command.
      * @return The structure of the command execution.
      */
-    String[] compileCommand(EngineType engineType, String command, IContext context);
+    String[] compileCommand(CommandType commandType, String command, IContext context);
 
     /**
      * Configures temporary file with entity information by engine type and context.
      *
-     * @param engineType A grid engine type.
+     * @param commandType A command type.
      * @param entity     Name of the entity used.
      * @param context    Structure with data for forming a template file.
      * @return Path to temporary file.
      */
-    Path compileEntityConfigFile(EngineType engineType, String entity, IContext context);
+    Path compileEntityConfigFile(CommandType commandType, String entity, IContext context);
 }

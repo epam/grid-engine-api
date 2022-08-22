@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.provider.host.slurm;
 
+import com.epam.grid.engine.TestPropertiesWithSlurmEngine;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.HostFilter;
@@ -37,7 +38,8 @@ import java.util.List;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_LIST;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest(properties = {"grid.engine.type=SLURM"})
+@SpringBootTest
+@TestPropertiesWithSlurmEngine
 public class SlurmHostProviderTest {
 
     private static final String WORKER1_OUT = "NodeName=worker1 Arch=x86_64 CoresPerSocket=1  CPUAlloc=0 CPUTot=1 "

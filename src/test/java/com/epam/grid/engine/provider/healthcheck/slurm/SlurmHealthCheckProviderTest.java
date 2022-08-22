@@ -19,6 +19,7 @@
 
 package com.epam.grid.engine.provider.healthcheck.slurm;
 
+import com.epam.grid.engine.TestPropertiesWithSlurmEngine;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.entity.healthcheck.GridEngineStatus;
@@ -42,7 +43,8 @@ import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest(properties = {"grid.engine.type=SLURM"})
+@SpringBootTest
+@TestPropertiesWithSlurmEngine
 public class SlurmHealthCheckProviderTest {
 
     private static final String NOT_PROVIDED_OUT = "some key    = some values" + NEW_LINE_DELIMITER

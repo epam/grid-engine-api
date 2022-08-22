@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TextConstants {
 
+    public static final String COLON = ":";
     public static final String COMMA = ",";
     public static final String DOT = ".";
     public static final String EQUAL_SIGN = "=";

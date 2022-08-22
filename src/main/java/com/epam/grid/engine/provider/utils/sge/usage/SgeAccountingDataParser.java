@@ -44,11 +44,10 @@ public abstract class SgeAccountingDataParser {
     private static final String SGE_OUTPUT_HEADER = "Total System Usage";
 
     /**
-     * This method parses SGE usage summary information and converts it into a {@code UsageReport} object.
+     * This method parses SGE usage summary information and converts it into a {@link UsageReport} object.
      *
      * @param stdOut - a List containing stdOut of SGE CommandResult
      * @return the report object containing completely parsed usage summary information
-     * @see UsageReport
      */
     public abstract UsageReport parseAccountingDataFromStdOut(final List<String> stdOut);
 

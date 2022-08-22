@@ -59,7 +59,7 @@ public class JobOptions {
     /**
      * Job priority.
      */
-    private int priority;
+    private Long priority;
     /**
      * A list of queues in which the job should be processed.
      */
@@ -76,4 +76,8 @@ public class JobOptions {
      * List of arguments for the command being processed.
      */
     private List<String> arguments;
+    /**
+     * Specific slurm parallel environment settings.
+     */
+    private ParallelExecutionOptions parallelExecutionOptions;
 }

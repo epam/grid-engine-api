@@ -26,16 +26,21 @@ import com.epam.grid.engine.entity.job.Job;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.job.JobLogInfo;
 import com.epam.grid.engine.entity.job.JobOptions;
+import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.provider.job.JobProvider;
 
+import com.epam.grid.engine.provider.log.JobLogProvider;
+import com.epam.grid.engine.provider.utils.DirectoryPathUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import javax.annotation.PostConstruct;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * This class defines operations for processing information from the user
@@ -45,21 +50,25 @@ import java.nio.file.Path;
 @Service
 public class JobOperationProviderService {
 
-    private final String logDir;
+    private final String gridSharedFolder;
     private final JobProvider jobProvider;
+    private final JobLogProvider jobLogProvider;
 
     /**
      * Constructor, sets created jobProvider bean to the class field and the path to job log.
      *
-     * @param jobProvider created JobProvider
-     * @param logDir      the path to the directory where all log files will be stored
-     *                    occurred when processing the job
+     * @param jobProvider      created JobProvider
+     * @param gridSharedFolder the path to the primary directory from properties, where log and working directories
+     *                         should be stored
      * @see JobProvider
      */
 
-    public JobOperationProviderService(final JobProvider jobProvider, @Value("${job.log.dir}") final String logDir) {
+    public JobOperationProviderService(final JobProvider jobProvider,
+                                       final JobLogProvider jobLogProvider,
+                                       @Value("${grid.engine.shared.folder}") final String gridSharedFolder) {
         this.jobProvider = jobProvider;
-        this.logDir = logDir;
+        this.jobLogProvider = jobLogProvider;
+        this.gridSharedFolder = gridSharedFolder;
     }
 
     /**
@@ -73,12 +82,27 @@ public class JobOperationProviderService {
     }
 
     /**
-     * Deletes the job and returns information about this job.
+     * Deletes jobs and returns information about these jobs.
      *
      * @param deleteJobFilter An object with the task deletion parameters.
      * @return Information about deleted job.
      */
-    public DeletedJobInfo deleteJob(final DeleteJobFilter deleteJobFilter) {
+    public Listing<DeletedJobInfo> deleteJob(final DeleteJobFilter deleteJobFilter) {
+        if (!StringUtils.hasText(deleteJobFilter.getUser()) && CollectionUtils.isEmpty(deleteJobFilter.getIds())) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("Incorrect filling in %s. "
+                    + "Either at least one `id` or `user` must be specified to delete jobs!", deleteJobFilter));
+        }
+        if (StringUtils.hasText(deleteJobFilter.getUser()) && CollectionUtils.isNotEmpty(deleteJobFilter.getIds())) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("Incorrect filling in %s. "
+                    + "Only 'ids' or 'name' can be specified for jobs removal!", deleteJobFilter));
+        }
+        ListUtils.emptyIfNull(deleteJobFilter.getIds()).stream()
+                .filter(id -> id == null || id <= 0)
+                .findFirst()
+                .ifPresent(id -> {
+                    throw new GridEngineException(HttpStatus.BAD_REQUEST, String.format("At least one `id` is "
+                                    + "incorrect specified in %s for job removal!", deleteJobFilter));
+                });
         return jobProvider.deleteJob(deleteJobFilter);
     }
 
@@ -89,11 +113,22 @@ public class JobOperationProviderService {
      * @return Running job.
      */
     public Job runJob(final JobOptions options) {
-        return jobProvider.runJob(options);
+        if (!StringUtils.hasText(options.getCommand())) {
+            throw new GridEngineException(HttpStatus.BAD_REQUEST, "Command should be specified!");
+        }
+        Optional.ofNullable(options.getWorkingDir()).ifPresent(workingDir -> {
+            final String workingDirAbsolutePath =
+                    DirectoryPathUtils.resolvePathToAbsolute(gridSharedFolder, workingDir);
+            if (!workingDir.equals(workingDirAbsolutePath)) {
+                options.setWorkingDir(workingDirAbsolutePath);
+                log.info("Working directory was changed from " + workingDir + " to " + workingDirAbsolutePath);
+            }
+        });
+        return jobProvider.runJob(options, jobLogProvider.getJobLogDir());
     }
 
     /**
-     * This method passes the request into {@link JobProvider} and returns an information
+     * This method passes the request into {@link JobProvider} and returns information
      * about the job log file and a list of required log lines.
      *
      * @param jobId    The job identifier.
@@ -102,9 +137,9 @@ public class JobOperationProviderService {
      * @param fromHead if it's true, lines are taken from the head of the log file, otherwise from the tail.
      * @return {@link JobLogInfo}
      */
-    public JobLogInfo getJobLogInfo(final int jobId, final JobLogInfo.Type logType,
+    public JobLogInfo getJobLogInfo(final long jobId, final JobLogInfo.Type logType,
                                     final int lines, final boolean fromHead) {
-        return jobProvider.getJobLogInfo(jobId, logType, lines, fromHead);
+        return jobLogProvider.getJobLogInfo(jobId, logType, lines, fromHead);
     }
 
     /**
@@ -115,23 +150,7 @@ public class JobOperationProviderService {
      * @param logType The type of required log file.
      * @return The job log file like a stream.
      */
-    public InputStream getJobLogFile(final int jobId, final JobLogInfo.Type logType) {
-        return jobProvider.getJobLogFile(jobId, logType);
+    public InputStream getJobLogFile(final long jobId, final JobLogInfo.Type logType) {
+        return jobLogProvider.getJobLogFile(jobId, logType);
     }
-
-    /**
-     * This method checks for job log directory existence and write accessibility,
-     * in case of failure, the application hasn't to start.
-     */
-    @PostConstruct
-    public void checkLogDirAvailability() {
-        final Path logPath = Path.of(logDir);
-        if (!Files.isDirectory(logPath) || !Files.isWritable(logPath)) {
-            final String message = "The directory to log files was not found or write permissions are missing: "
-                    + logDir;
-            log.error(message);
-            throw new IllegalStateException(message);
-        }
-    }
-
 }

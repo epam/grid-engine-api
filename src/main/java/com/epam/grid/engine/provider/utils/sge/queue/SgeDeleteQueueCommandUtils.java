@@ -20,7 +20,7 @@
 package com.epam.grid.engine.provider.utils.sge.queue;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.exception.GridEngineException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -56,9 +56,9 @@ public class SgeDeleteQueueCommandUtils {
     public static String[] buildDeleteQueueCommand(
             final String queueName,
             final GridEngineCommandCompiler commandCompiler,
-            final EngineType engineType) {
+            final CommandType commandType) {
         final Context context = new Context();
         context.setVariable(QUEUE_PARAMETER, queueName);
-        return commandCompiler.compileCommand(engineType, QCONF_DQ, context);
+        return commandCompiler.compileCommand(commandType, QCONF_DQ, context);
     }
 }

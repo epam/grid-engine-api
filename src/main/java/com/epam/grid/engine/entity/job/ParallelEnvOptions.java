@@ -24,6 +24,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * This class is used to assign parallel environment options. Can be used only in SGE.
+ */
 @Data
 @Builder
 @NoArgsConstructor

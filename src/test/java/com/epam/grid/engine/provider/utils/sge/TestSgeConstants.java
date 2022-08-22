@@ -23,8 +23,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class TestSgeConstants {
-    public static final String ONE = "1";
-
     public static final String EMPTY_STRING = "";
     public static final String SPACE = " ";
 

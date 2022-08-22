@@ -1,0 +1,6 @@
+sinfo
+[# th:if="${not #lists.isEmpty(partitionName)}"]
+    --partition=[# th:text="${#strings.listJoin(partitionName, ',')}"]
+    [/]
+[/]
+-h -o "%R|%N|%c|%g" -N

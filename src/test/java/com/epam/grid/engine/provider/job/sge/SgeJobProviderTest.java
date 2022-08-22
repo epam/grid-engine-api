@@ -19,20 +19,20 @@
 
 package com.epam.grid.engine.provider.job.sge;
 
-import com.epam.grid.engine.cmd.CmdExecutor;
+import com.epam.grid.engine.TestPropertiesWithSgeEngine;
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
 import com.epam.grid.engine.entity.CommandResult;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.JobFilter;
 import com.epam.grid.engine.entity.Listing;
 import com.epam.grid.engine.entity.job.DeleteJobFilter;
 import com.epam.grid.engine.entity.job.DeletedJobInfo;
 import com.epam.grid.engine.entity.job.Job;
-import com.epam.grid.engine.entity.job.JobLogInfo;
 import com.epam.grid.engine.entity.job.JobOptions;
 import com.epam.grid.engine.entity.job.JobState;
 import com.epam.grid.engine.entity.job.ParallelEnvOptions;
+import com.epam.grid.engine.entity.job.ParallelExecutionOptions;
 import com.epam.grid.engine.exception.GridEngineException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
@@ -40,123 +40,61 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_LIST;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_STRING;
-import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.ONE;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.PENDING_STRING;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.RUNNING_STRING;
-import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SPACE;
-import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SUSPENDED_STRING;
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.TYPE_XML;
-import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest(properties = {"grid.engine.type=SGE"})
+@SpringBootTest
+@TestPropertiesWithSgeEngine
 public class SgeJobProviderTest {
+
+    private static final long SOME_JOB_ID_1 = 10;
+    private static final long SOME_JOB_ID_2 = 5;
+    private static final String SOME_JOB_ID_2_STRING = String.valueOf(SOME_JOB_ID_2);
 
     private static final String QSTAT_COMMAND = "qstat";
     private static final String QDEL_COMMAND = "qdel";
-    private static final String GET_LOG_LINES_COMMAND = "get_log_lines";
-    private static final String GET_LOGFILE_INFO_COMMAND = "get_logfile_info";
-    private static final String FORCED_QDEL = "-f";
-    private static final String USER_QDEL = "-u";
-    private static final String STATE = "-s";
-    private static final String SGEUSER = "sgeuser";
-    private static final String SGE_USER = "sge user";
-    private static final String HAS_DELETED_JOB = "sgeuser has deleted job 1";
-    private static final String JOB_DOES_NOT_EXISTS = "Job does not exists";
-    private static final String HAS_NOT_SUBMITTED_JOB = "user has not submitted job";
-    private static final String FOUR = "4";
-    private static final String EIGHT = "8";
-    private static final String NINE = "9";
-    private static final String ELEVEN = "11";
-    private static final String THIRTEEN = "13";
-    private static final String NUMBER_FIND_PATTERN = "(.)*(\\d)(.)*";
+    private static final String QDEL_USER_KEY = "-u";
+    private static final String USER_NAME = "sgeuser";
+    private static final String SUCCESS_JOB_DELETING_STRING_TEMPLATE = USER_NAME + " has deleted job %d";
+    private static final String ERROR_JOB_DELETING_STRING_TEMPLATE = "denied: job \"%d\" does not exist";
+
     private static final String QSUB = "qsub";
-    private static final String COMMAND_SCRIPT_FILE = "demo_v.sh";
-    private static final String SUCCESSFULLY_DELETED = "sgeuser has deleted job 1";
+    private static final String JOB_COMMAND = "simple.sh";
+    private static final String SOME_PE_NAME = "somePe";
+    private static final int SOME_PE_MIN_VALUE = 1;
+    private static final int SOME_PE_MAX_VALUE = 100;
+    private static final int WRONG_PE_MIN_VALUE = -1;
+    private static final int WRONG_PE_MAX_VALUE = 10_000_000;
+    private static final String SOME_JOB_SUBMIT_ERROR_STDOUT = "Unable to run job: job rejected";
+    private static final String JOB_SUBMITTED_FORMAT_TEMPLATE = "Your job %d (\"%s\") has been submitted";
+    private static final String JOB_SUBMITTED_STDOUT = String.format(JOB_SUBMITTED_FORMAT_TEMPLATE,
+            SOME_JOB_ID_2, JOB_COMMAND);
+
     private static final String SOME_PENDING_STATUS_CODE = "qw";
     private static final String SOME_RUNNING_STATUS_CODE = "r";
-    private static final String TEST_QUEUE = "test_queue";
-    private static final String JOB_COMMAND = "simple.sh";
+    private static final String SOME_WRONG_STATUS_CODE = "lol";
+    private static final String SOME_QUEUE_NAME = "test_queue";
+    private static final String SOME_JOB_LOG_DIRECTORY_PATH = "/mnt/logs";
 
-    private static final String ENV_VAR_KEY = "myVarKey";
-    private static final String ENV_VAR_VALUE = "some";
-    private static final String ENV_VAR_MAP_ENTRY = "myVarKey=some";
-    private static final String ENV_VAR_MAP_ONLY_KEY = "myVarKey";
-    private static final String ENV_VAR_OPTION = "-v";
-    private static final String ENV_VARIABLES = "envVariables";
-    private static final String TEXT_JOB_SUBMITTED = "Your job 7 (\"demo_v.sh\") has been submitted";
-
-    private static final String SOMEUSER = "someuser";
-    private static final String ANOTHERUSER = "anotheruser";
     private static final String SOME_JOB_NAME_1 = "someName";
     private static final String SOME_JOB_NAME_2 = "favoriteJob";
-    private static final List<String> NAME = Collections.singletonList(SOME_JOB_NAME_1);
-    private static final List<Integer> ID = Collections.singletonList(7);
 
-    private static final int SOME_JOB_ID = 10;
-    private static final int SOME_LINES = 10;
-    private static final int SOME_BYTES = 150;
-    private static final JobLogInfo.Type SOME_LOG_TYPE = JobLogInfo.Type.ERR;
-    private static final String LOG_FILE_NAME = String.format("%d.%s", SOME_JOB_ID, SOME_LOG_TYPE.getSuffix());
-    private static final List<String> INFO_COMMAND_RESULT_STDOUT = Collections.singletonList(
-            String.format("%d %d %s", SOME_LINES, SOME_BYTES, LOG_FILE_NAME));
-
-    private static final String VALID_XML = "<?xml version='1.0'?>\n"
-            + "<job_info  xmlns:xsd="
-            + "\"http://arc.liv.ac.uk/repos/darcs/sge/source/dist/util/resources/schemas/qstat/qstat.xsd\">\n"
-            + "  <queue_info>\n"
-            + "  <job_list state=\"running\">\n"
-            + "      <JB_job_number>8</JB_job_number>\n"
-            + "      <JAT_prio>0.55500</JAT_prio>\n"
-            + "      <JB_name>someName</JB_name>\n"
-            + "      <JB_owner>sgeuser</JB_owner>\n"
-            + "      <state>r</state>\n"
-            + "      <JAT_start_time>2021-07-02T10:46:14</JAT_start_time>\n"
-            + "      <queue_name>main@c242f10e1253</queue_name>\n"
-            + "      <slots>1</slots>\n"
-            + "    </job_list>\n"
-            + "  </queue_info>\n"
-            + "  <job_info>\n"
-            + "    <job_list state=\"pending\">\n"
-            + "      <JB_job_number>2</JB_job_number>\n"
-            + "      <JAT_prio>0.00000</JAT_prio>\n"
-            + "      <JB_name>someName</JB_name>\n"
-            + "      <JB_owner>sgeuser</JB_owner>\n"
-            + "      <state>qw</state>\n"
-            + "      <JB_submission_time>2021-06-30T17:27:30</JB_submission_time>\n"
-            + "      <queue_name></queue_name>\n"
-            + "      <slots>1</slots>\n"
-            + "    </job_list>\n"
-            + "    <job_list state=\"suspended\">\n"
-            + "      <JB_job_number>9</JB_job_number>\n"
-            + "      <JAT_prio>0.00000</JAT_prio>\n"
-            + "      <JB_name>someName</JB_name>\n"
-            + "      <JB_owner>sgeuser</JB_owner>\n"
-            + "      <state>s</state>\n"
-            + "      <JB_submission_time>2021-06-30T17:27:30</JB_submission_time>\n"
-            + "      <queue_name></queue_name>\n"
-            + "      <slots>1</slots>\n"
-            + "    </job_list>\n"
-            + "  </job_info>\n"
-            + "</job_info>";
+    private static final String SOME_JOB_STARTING_TIME_1 = "2021-06-30T17:27:30";
+    private static final String SOME_JOB_STARTING_TIME_2 = "2022-07-21T18:48:59";
+    private static final String SOME_JOB_PRIORITY_STRING = "0.55500";
+    private static final double SOME_JOB_PRIORITY = Double.parseDouble(SOME_JOB_PRIORITY_STRING);
+    private static final int SOME_SLOTS_AMOUNT = 1;
 
     private static final String INVALID_XML = "<?xml version='1.0'?>\n"
             + "<job_info  xmlns:xsd="
@@ -173,39 +111,39 @@ public class SgeJobProviderTest {
             + "<slots>1</slots>\n"
             + "</job_list>";
 
-    private static final String EMPTY_JOB_LIST = "<?xml version='1.0'?>\n"
+    private static final String QSTAT_STDOUT_TEMPLATE = "<?xml version='1.0'?>\n"
             + "<job_info  xmlns:xsd="
             + "\"http://arc.liv.ac.uk/repos/darcs/sge/source/dist/util/resources/schemas/qstat/qstat.xsd\">\n"
-            + "  <queue_info>\n"
-            + "  </queue_info>\n"
-            + "  <job_info>\n"
-            + "  </job_info>\n"
+            + "  <queue_info>\n%s</queue_info>\n"
+            + "  <job_info>\n%s</job_info>\n"
             + "</job_info>";
 
-    private static final String START = "<?xml version='1.0'?>\n"
-            + "<job_info  xmlns:xsd="
-            + "\"http://arc.liv.ac.uk/repos/darcs/sge/source/dist/util/resources/schemas/qstat/qstat.xsd\">\n"
-            + " <queue_info>\n"
-            + " </queue_info>\n"
-            + " <job_info>\n";
-
-    private static final String DATA = "<JAT_prio>0.55500</JAT_prio>\n"
-            + "<JAT_start_time>2021-06-30T17:27:30</JAT_start_time>\n"
-            + "<queue_name>test_queue</queue_name>\n"
-            + "<slots>1</slots>\n"
+    private static final String QSTAT_STDOUT_JOB_TEMPLATE = "<job_list state=\"%s\">\n"
+            + "<JB_job_number>%d</JB_job_number>\n"
+            + "<JAT_prio>%s</JAT_prio>\n"
+            + "<JB_name>%s</JB_name>\n"
+            + "<JB_owner>%s</JB_owner>\n"
+            + "<state>%s</state>\n"
+            + "<JAT_start_time>%s</JAT_start_time>\n"
+            + "<queue_name>%s</queue_name>\n"
+            + "<slots>%d</slots>\n"
             + "</job_list>\n";
 
-    private static final String END = " </job_info>\n" + "</job_info>";
+    private static final String RUNNING_JOB_XML = String.format(QSTAT_STDOUT_JOB_TEMPLATE,
+            RUNNING_STRING, SOME_JOB_ID_1, SOME_JOB_PRIORITY_STRING, SOME_JOB_NAME_1, USER_NAME,
+            SOME_RUNNING_STATUS_CODE, SOME_JOB_STARTING_TIME_1, SOME_QUEUE_NAME, SOME_SLOTS_AMOUNT);
 
-    private static final String RUNNING_XML = buildTemplate(Map.of(
-            7, List.of(RUNNING_STRING, SOME_JOB_NAME_1, SOME_RUNNING_STATUS_CODE)));
+    private static final String PENDING_JOB_XLM = String.format(QSTAT_STDOUT_JOB_TEMPLATE,
+            PENDING_STRING, SOME_JOB_ID_2, SOME_JOB_PRIORITY_STRING, SOME_JOB_NAME_2, USER_NAME,
+            SOME_PENDING_STATUS_CODE, SOME_JOB_STARTING_TIME_2, SOME_QUEUE_NAME, SOME_SLOTS_AMOUNT);
 
-    private static final String TWO_VALID_XML = buildTemplate(Map.of(
-            7, List.of(RUNNING_STRING, SOME_JOB_NAME_1, SOME_RUNNING_STATUS_CODE),
-            2, List.of(PENDING_STRING, SOME_JOB_NAME_2, SOME_PENDING_STATUS_CODE)));
+    private static final List<String> EMPTY_JOB_LIST_STDOUT = List.of(String.format(QSTAT_STDOUT_TEMPLATE,
+            EMPTY_STRING, EMPTY_STRING));
+    private static final List<String> TWO_JOBS_QSTAT_STDOUT = List.of(String.format(QSTAT_STDOUT_TEMPLATE,
+            RUNNING_JOB_XML, PENDING_JOB_XLM));
 
-    private static final String[] DEFAULT_REQUEST = new String[]{QSTAT_COMMAND, STATE, SOME_RUNNING_STATUS_CODE,
-                                                                 TYPE_XML};
+    private static final List<String> ONE_PENDING_JOB_QSTAT_STDOUT = List.of(String.format(QSTAT_STDOUT_TEMPLATE,
+            EMPTY_STRING, PENDING_JOB_XLM));
 
     @Autowired
     private SgeJobProvider sgeJobProvider;
@@ -216,343 +154,209 @@ public class SgeJobProviderTest {
     @MockBean
     private GridEngineCommandCompiler commandCompiler;
 
-    @MockBean
-    private JobFilter mockJobFilter;
-
-    @Captor
-    private ArgumentCaptor<EngineType> engineTypeCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> commandCaptor;
-
-    @Captor
-    private ArgumentCaptor<Context> contextCaptor;
-
-    private static String buildTemplate(final Map<Integer, List<String>> jobParams) {
-        final String jobBody = jobParams.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> {
-                    final Integer jobId = e.getKey();
-                    final String jobState = e.getValue().get(0);
-                    final String jobName = e.getValue().get(1);
-                    final String jobCodeState = e.getValue().get(2);
-                    return String.format("<job_list state=\"%s\">\n", jobState)
-                            + String.format("<JB_job_number>%d</JB_job_number>\n", jobId)
-                            + String.format("<JB_name>%s</JB_name>\n", jobName)
-                            + "<JB_owner>sgeuser</JB_owner>\n"
-                            + String.format("<state>%s</state>\n", jobCodeState);
-                }).collect(Collectors.joining(DATA));
-        return START + jobBody + DATA + END;
-    }
-
     @Test
     public void shouldFailWithInvalidXml() {
-        final List<String> hostList = Collections.singletonList(INVALID_XML);
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
+        final CommandResult commandResult = new CommandResult(List.of(INVALID_XML), 0, EMPTY_LIST);
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
-        Assertions.assertEquals(EngineType.SGE, sgeJobProvider.getProviderType());
-        final JobFilter jobFilter = new JobFilter();
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
-                sgeJobProvider.filterJobs(jobFilter));
-        Assertions.assertNotNull(thrown.getMessage());
+        Assertions.assertThrows(GridEngineException.class, () -> sgeJobProvider.filterJobs(new JobFilter()));
     }
 
     @Test
-    public void shouldNotFailWithEmptyJobList() {
-        final List<String> hostList = Collections.singletonList(EMPTY_JOB_LIST);
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
+    public void shouldReturnEmptyJobListDuringFiltration() {
+        final CommandResult commandResult = new CommandResult(EMPTY_JOB_LIST_STDOUT, 0, EMPTY_LIST);
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
-        final List<Job> result = sgeJobProvider.filterJobs(new JobFilter()).getElements();
-
-        Assertions.assertEquals(0, result.size());
-        Assertions.assertEquals(EngineType.SGE, sgeJobProvider.getProviderType());
+        Assertions.assertTrue(sgeJobProvider.filterJobs(new JobFilter()).getElements().isEmpty());
     }
 
     @Test
-    public void shouldLoadXml() {
-        final Job pendingJob = Job.builder()
-                .id(2)
-                .name(SOME_JOB_NAME_2)
-                .priority(0.555)
-                .owner(SGEUSER)
-                .queueName(TEST_QUEUE)
-                .submissionTime(LocalDateTime.parse("2021-06-30T17:27:30"))
-                .slots(1)
-                .state(JobState.builder()
-                        .category(JobState.Category.PENDING)
-                        .state(PENDING_STRING)
-                        .stateCode(SOME_PENDING_STATUS_CODE)
-                        .build())
-                .build();
-        final Job runningJob = runningJobTemplate();
-        final List<String> hostList = Collections.singletonList(TWO_VALID_XML);
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
+    public void shouldReturnCorrectJobsWhenGettingJobList() {
+        final CommandResult commandResult = new CommandResult(TWO_JOBS_QSTAT_STDOUT, 0, EMPTY_LIST);
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
+
         final Listing<Job> result = sgeJobProvider.filterJobs(new JobFilter());
-
         Assertions.assertEquals(2, result.getElements().size());
-        Assertions.assertEquals(pendingJob, result.getElements().get(0));
-        Assertions.assertEquals(runningJob, result.getElements().get(1));
+        Assertions.assertTrue(result.getElements().contains(pendingJobTemplate()));
+        Assertions.assertTrue(result.getElements().contains(runningJobTemplate()));
     }
 
-    @Test
-    public void shouldReturnCorrectOwnerFiltration() {
-        final Job runningJob = runningJobTemplate();
-        final List<String> hostList = Collections.singletonList(RUNNING_XML);
-        final JobFilter jobFilter = new JobFilter();
-        jobFilter.setOwners(Collections.singletonList(SGEUSER));
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
-        mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, USER_QDEL, SGEUSER, TYPE_XML);
-        final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(1, result.getElements().size());
-        Assertions.assertEquals(runningJob, result.getElements().get(0));
-    }
-
-    @Test
-    public void shouldReturnCorrectStateFiltration() {
-        final Job runningJob = runningJobTemplate();
-        final List<String> hostList = Collections.singletonList(RUNNING_XML);
-        final JobFilter jobFilter = new JobFilter();
-        jobFilter.setState(RUNNING_STRING);
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
-        mockCommandCompilation(QSTAT_COMMAND, commandResult, DEFAULT_REQUEST);
-        final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(1, result.getElements().size());
-        Assertions.assertEquals(runningJob, result.getElements().get(0));
-    }
-
-    @Test
-    public void shouldReturnCorrectIdFiltration() {
-        final Job runningJob = runningJobTemplate();
-        final List<String> hostList = Collections.singletonList(TWO_VALID_XML);
-        final JobFilter jobFilter = new JobFilter();
-        jobFilter.setIds(ID);
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
+    @ParameterizedTest
+    @MethodSource("provideCasesForFiltration")
+    public void shouldReturnCorrectFiltration(final JobFilter jobFilter, final List<String> stdOut,
+                                              final Job expectedJob) {
+        final CommandResult commandResult = new CommandResult(stdOut, 0, EMPTY_LIST);
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
+
         final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
         Assertions.assertEquals(1, result.getElements().size());
-        Assertions.assertEquals(runningJob, result.getElements().get(0));
+        Assertions.assertEquals(expectedJob, result.getElements().get(0));
+    }
+
+    static Stream<Arguments> provideCasesForFiltration() {
+        return Stream.of(
+                Arguments.of(JobFilter.builder().names(List.of(SOME_JOB_NAME_1)).build(), TWO_JOBS_QSTAT_STDOUT,
+                        runningJobTemplate()),
+                Arguments.of(JobFilter.builder().ids(List.of(SOME_JOB_ID_2)).build(), TWO_JOBS_QSTAT_STDOUT,
+                        pendingJobTemplate()),
+                Arguments.of(JobFilter.builder().state(PENDING_STRING).build(), ONE_PENDING_JOB_QSTAT_STDOUT,
+                        pendingJobTemplate())
+        );
     }
 
     @Test
-    public void shouldReturnCorrectNameFiltration() {
-        final List<String> hostList = Collections.singletonList(TWO_VALID_XML);
-        final JobFilter jobFilter = new JobFilter();
-        jobFilter.setNames(NAME);
-        final Job runningJob = runningJobTemplate();
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(hostList)
-                .stdErr(EMPTY_LIST)
-                .build();
-
+    public void shouldThrowWhenCommandResultFiltrationWithErrorCode() {
+        final CommandResult commandResult = new CommandResult(EMPTY_LIST, 1, EMPTY_LIST);
         mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
-        final Listing<Job> result = sgeJobProvider.filterJobs(jobFilter);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(1, result.getElements().size());
-        Assertions.assertEquals(runningJob, result.getElements().get(0));
+        Assertions.assertThrows(GridEngineException.class, () -> sgeJobProvider.filterJobs(new JobFilter()));
     }
 
     @Test
-    public void shouldFailWithException() {
-        final JobFilter jobFilter = new JobFilter();
-        final CommandResult commandResult = CommandResult.builder()
-                .stdOut(EMPTY_LIST)
-                .stdErr(EMPTY_LIST)
-                .exitCode(1)
+    public void shouldThrowWhenPassWrongStatusCodeDuringFiltration() {
+        final JobFilter jobFilter = JobFilter.builder().state(SOME_WRONG_STATUS_CODE).build();
+        Assertions.assertThrows(GridEngineException.class, () -> sgeJobProvider.filterJobs(jobFilter));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidPeOptions")
+    public void shouldThrowWhenPassWrongPeOptionsDuringJobSubmitting(final String peName,
+                                                                     final int peMin, final int peMax) {
+        final JobOptions jobOptions = JobOptions.builder()
+                .command(JOB_COMMAND)
+                .parallelEnvOptions(new ParallelEnvOptions(peName, peMin, peMax))
                 .build();
-
-        mockCommandCompilation(QSTAT_COMMAND, commandResult, QSTAT_COMMAND, TYPE_XML);
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.filterJobs(jobFilter));
-        Assertions.assertNotNull(thrown.getMessage());
+        Assertions.assertThrows(GridEngineException.class,
+                () -> sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH));
     }
 
-    @ParameterizedTest
-    @MethodSource("provideBadParameters")
-    public void shouldThrowExceptionDuringBuildingCommand(final String state, final List<String> owners) {
-        final JobFilter jobFilter = JobFilter.builder()
-                .state(state)
-                .owners(owners)
-                .build();
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.filterJobs(jobFilter));
-        Assertions.assertNotNull(thrown.getMessage());
-    }
-
-    static Stream<Arguments> provideBadParameters() {
+    static Stream<Arguments> provideInvalidPeOptions() {
         return Stream.of(
-                Arguments.of("lol", null),
-                Arguments.of("had", Collections.singletonList(SGEUSER)),
-                Arguments.of("runing", List.of(SGEUSER, SOMEUSER, ANOTHERUSER))
+                Arguments.of(EMPTY_STRING, SOME_PE_MIN_VALUE, SOME_PE_MAX_VALUE),
+                Arguments.of(SOME_PE_NAME, WRONG_PE_MIN_VALUE, SOME_PE_MAX_VALUE),
+                Arguments.of(SOME_PE_NAME, WRONG_PE_MAX_VALUE, SOME_PE_MAX_VALUE),
+                Arguments.of(SOME_PE_NAME, SOME_PE_MIN_VALUE, WRONG_PE_MIN_VALUE),
+                Arguments.of(SOME_PE_NAME, SOME_PE_MIN_VALUE, WRONG_PE_MAX_VALUE),
+                Arguments.of(SOME_PE_NAME, SOME_PE_MAX_VALUE, SOME_PE_MIN_VALUE)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("provideInvalidJobOptions")
-    public void shouldThrowExceptionMakingQsubCommand(final JobOptions jobOptions) {
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.runJob(jobOptions));
-        Assertions.assertNotNull(thrown.getMessage());
+    @MethodSource("provideBadCommandResultForJobSubmitting")
+    public void shouldThrowWhenBadCommandResultDuringJobSubmitting(final CommandResult commandResult) {
+        final JobOptions jobOptions = JobOptions.builder().command(JOB_COMMAND).build();
+        mockCommandCompilation(QSUB, commandResult, QSUB, JOB_COMMAND);
+        Assertions.assertThrows(GridEngineException.class,
+                () -> sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH));
     }
 
-    static Stream<Arguments> provideInvalidJobOptions() {
+    static Stream<Arguments> provideBadCommandResultForJobSubmitting() {
         return Stream.of(
-                Arguments.of(JobOptions.builder().command(null).build()),
-                Arguments.of(JobOptions.builder().command(EMPTY_STRING).build()),
-                Arguments.of(JobOptions.builder().parallelEnvOptions(new ParallelEnvOptions(EMPTY_STRING, 1, 100))
-                        .command(JOB_COMMAND).build()),
-                Arguments.of(JobOptions.builder().parallelEnvOptions(new ParallelEnvOptions(null, 1, 100))
-                        .command(JOB_COMMAND).build())
-        );
+                        new CommandResult(EMPTY_LIST, 1, EMPTY_LIST),
+                        new CommandResult(EMPTY_LIST, 0, EMPTY_LIST),
+                        new CommandResult(List.of(SOME_JOB_SUBMIT_ERROR_STDOUT), 0, EMPTY_LIST))
+                .map(Arguments::of);
     }
 
     @Test
-    public void shouldThrowsExceptionBecauseNoCommand() {
-        final JobOptions jobOptions = new JobOptions();
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
-                sgeJobProvider.runJob(jobOptions));
-        Assertions.assertNotNull(thrown.getMessage());
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideValidEnvVariables")
-    public void shouldMakeValidEnvVariables(final JobOptions.JobOptionsBuilder jobOptionsBuilder,
-                                            final String expectedEnvVariables, final String[] command) {
-        final JobOptions jobOptions = jobOptionsBuilder.build();
-        final CommandResult commandResult = new CommandResult();
-
-        jobOptions.setCommand(COMMAND_SCRIPT_FILE);
-        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
-        commandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(QSUB, commandResult, command);
-        sgeJobProvider.runJob(jobOptions);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(contextCaptor.getValue().getVariable(ENV_VARIABLES), expectedEnvVariables);
-    }
-
-    static Stream<Arguments> provideValidEnvVariables() {
-        return Stream.of(
-                Arguments.of(getSimpleJobCommand().envVariables(Collections.singletonMap(ENV_VAR_KEY, ENV_VAR_VALUE)),
-                        ENV_VAR_MAP_ENTRY, new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_MAP_ENTRY, COMMAND_SCRIPT_FILE}),
-                Arguments.of(getSimpleJobCommand().envVariables(Collections.singletonMap(ENV_VAR_KEY, EMPTY_STRING)),
-                        ENV_VAR_MAP_ONLY_KEY, new String[]{QSUB, ENV_VAR_OPTION, ENV_VAR_KEY, COMMAND_SCRIPT_FILE})
-        );
-    }
-
-    private static JobOptions.JobOptionsBuilder getSimpleJobCommand() {
-        return JobOptions.builder().command(JOB_COMMAND);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideCorrectQsubCommands")
-    public void shouldReturnScheduledJobIndex(final String[] command) {
-        final Job expectedFilteredJob = correctBuild();
-        final JobOptions jobOptions = new JobOptions();
-        final CommandResult commandResult = new CommandResult();
-
-        jobOptions.setCommand(COMMAND_SCRIPT_FILE);
-        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
-        commandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(QSUB, commandResult, command);
-        final Job result = sgeJobProvider.runJob(jobOptions);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(expectedFilteredJob.getId(), result.getId());
-    }
-
-    static Stream<Arguments> provideCorrectQsubCommands() {
-        return mapObjectsToArgumentsStream(
-                new String[]{QSUB, "-wd", "/out/", COMMAND_SCRIPT_FILE},
-                new String[]{QSUB, "-pe", EMPTY_STRING, "1-100", COMMAND_SCRIPT_FILE},
-                new String[]{QSUB, "-pe", EMPTY_STRING, "100-10", COMMAND_SCRIPT_FILE},
-                new String[]{QSUB, "-pe", EMPTY_STRING, "1-0", COMMAND_SCRIPT_FILE},
-                new String[]{QSUB, "-pe", EMPTY_STRING, "1", COMMAND_SCRIPT_FILE}
-        );
-    }
-
-    @Test
-    public void shouldReturnRightJob() {
-        final Job expectedFilteredJob = correctBuild();
-        final JobOptions jobOptions = new JobOptions();
-        final CommandResult commandResult = new CommandResult();
-        jobOptions.setCommand(COMMAND_SCRIPT_FILE);
-
-        commandResult.setStdOut(Collections.singletonList(TEXT_JOB_SUBMITTED));
-        commandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(QSUB, commandResult, QSUB, COMMAND_SCRIPT_FILE);
-        final Job result = sgeJobProvider.runJob(jobOptions);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        Assertions.assertEquals(expectedFilteredJob, result);
-    }
-
-    private static Job correctBuild() {
-        return Job.builder()
-                .id(runningJobTemplate().getId())
+    public void shouldReturnSubmittingJob() {
+        final Job expectedJob = Job.builder()
+                .id(SOME_JOB_ID_2)
                 .state(JobState.builder()
                         .category(JobState.Category.PENDING)
                         .build())
                 .build();
+        final JobOptions jobOptions = JobOptions.builder().command(JOB_COMMAND).build();
+
+        final CommandResult commandResult = new CommandResult(List.of(JOB_SUBMITTED_STDOUT), 0, EMPTY_LIST);
+        mockCommandCompilation(QSUB, commandResult, QSUB, JOB_COMMAND);
+        Assertions.assertEquals(expectedJob, sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH));
+    }
+
+    @Test
+    public void shouldThrowExceptionBecauseParallelExecOptionsAreUsed() {
+        final JobOptions jobOptions = JobOptions.builder()
+                .command(JOB_COMMAND)
+                .parallelExecutionOptions(new ParallelExecutionOptions())
+                .build();
+        Assertions.assertThrows(UnsupportedOperationException.class,
+                () -> sgeJobProvider.runJob(jobOptions, SOME_JOB_LOG_DIRECTORY_PATH));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideValidCasesForJobDeleting")
+    public void shouldReturnCorrectDeletedJobInfo(final String requestUser, final String expectedUser,
+                                                  final List<Long> ids) {
+        final DeleteJobFilter jobFilter = DeleteJobFilter.builder().user(requestUser).ids(ids).build();
+        final CommandResult qstatCommandResult = new CommandResult(ONE_PENDING_JOB_QSTAT_STDOUT, 0, EMPTY_LIST);
+        mockCommandCompilation(QSTAT_COMMAND, qstatCommandResult, QSTAT_COMMAND, TYPE_XML);
+
+        final CommandResult commandResult = CommandResult.builder()
+                .stdOut(List.of(String.format(SUCCESS_JOB_DELETING_STRING_TEMPLATE, SOME_JOB_ID_2)))
+                .stdErr(EMPTY_LIST).exitCode(0).build();
+
+        mockCommandCompilation(QDEL_COMMAND, commandResult, QDEL_COMMAND, QDEL_USER_KEY,
+                USER_NAME, SOME_JOB_ID_2_STRING);
+        final Listing<DeletedJobInfo> result = sgeJobProvider.deleteJob(jobFilter);
+        Assertions.assertEquals(1, result.getElements().size());
+        Assertions.assertEquals(new DeletedJobInfo(SOME_JOB_ID_2, expectedUser), result.getElements().get(0));
+    }
+
+    static Stream<Arguments> provideValidCasesForJobDeleting() {
+        return Stream.of(
+                Arguments.of(USER_NAME, USER_NAME, EMPTY_LIST),
+                Arguments.of(null, USER_NAME, List.of(SOME_JOB_ID_2)),
+                Arguments.of(USER_NAME, USER_NAME, List.of(SOME_JOB_ID_1, SOME_JOB_ID_2))
+        );
+    }
+
+    @Test
+    public void shouldThrowWhenJobOwnerIsNotFoundDuringJobDeletion() {
+        final DeleteJobFilter jobFilter = DeleteJobFilter.builder().ids(List.of(SOME_JOB_ID_1)).build();
+        final CommandResult squeueCommandResult = new CommandResult(EMPTY_JOB_LIST_STDOUT, 0, EMPTY_LIST);
+        mockCommandCompilation(QSTAT_COMMAND, squeueCommandResult, TYPE_XML);
+        Assertions.assertThrows(GridEngineException.class, () -> sgeJobProvider.deleteJob(jobFilter));
+    }
+
+    @Test
+    public void shouldThrowWhenResultWithErrorCodeDuringJobDeletion() {
+        final DeleteJobFilter jobFilter = DeleteJobFilter.builder().user(USER_NAME).ids(List.of(SOME_JOB_ID_2)).build();
+        final CommandResult qstatCommandResult = new CommandResult(ONE_PENDING_JOB_QSTAT_STDOUT, 0, EMPTY_LIST);
+        mockCommandCompilation(QSTAT_COMMAND, qstatCommandResult, QSTAT_COMMAND, TYPE_XML);
+
+        final CommandResult commandResult = new CommandResult(EMPTY_LIST, 1, EMPTY_LIST);
+        mockCommandCompilation(QDEL_COMMAND, commandResult, QDEL_COMMAND, QDEL_USER_KEY,
+                USER_NAME, SOME_JOB_ID_2_STRING);
+
+        Assertions.assertThrows(GridEngineException.class, () -> sgeJobProvider.deleteJob(jobFilter));
+    }
+
+    @Test
+    public void shouldReturnValidDeletedJobInfoWhenOnlyOneSuccessDeletedJob() {
+        final DeleteJobFilter jobFilter = DeleteJobFilter.builder().ids(List.of(SOME_JOB_ID_1, SOME_JOB_ID_2)).build();
+
+        final CommandResult qstatCommandResult = new CommandResult(TWO_JOBS_QSTAT_STDOUT, 0, EMPTY_LIST);
+        mockCommandCompilation(QSTAT_COMMAND, qstatCommandResult, QSTAT_COMMAND, TYPE_XML);
+
+        final CommandResult qdelCommandResult = CommandResult.builder()
+                .stdOut(List.of(String.format(ERROR_JOB_DELETING_STRING_TEMPLATE, SOME_JOB_ID_1),
+                                String.format(SUCCESS_JOB_DELETING_STRING_TEMPLATE, SOME_JOB_ID_2)))
+                .stdErr(EMPTY_LIST).exitCode(1).build();
+
+        mockCommandCompilation(QDEL_COMMAND, qdelCommandResult, QDEL_COMMAND,
+                String.format("%d,%d", SOME_JOB_ID_1, SOME_JOB_ID_2));
+
+        final Listing<DeletedJobInfo> result = sgeJobProvider.deleteJob(jobFilter);
+        Assertions.assertEquals(1, result.getElements().size());
+        Assertions.assertEquals(new DeletedJobInfo(SOME_JOB_ID_2, USER_NAME), result.getElements().get(0));
     }
 
     private static Job runningJobTemplate() {
         return Job.builder()
-                .id(7)
+                .id(SOME_JOB_ID_1)
                 .name(SOME_JOB_NAME_1)
-                .priority(0.555)
-                .owner(SGEUSER)
-                .queueName(TEST_QUEUE)
-                .submissionTime(LocalDateTime.parse("2021-06-30T17:27:30"))
-                .slots(1)
+                .priority(SOME_JOB_PRIORITY)
+                .owner(USER_NAME)
+                .queueName(SOME_QUEUE_NAME)
+                .submissionTime(LocalDateTime.parse(SOME_JOB_STARTING_TIME_1))
+                .slots(SOME_SLOTS_AMOUNT)
                 .state(JobState.builder()
                         .category(JobState.Category.RUNNING)
                         .state(RUNNING_STRING)
@@ -560,286 +364,27 @@ public class SgeJobProviderTest {
                 .build();
     }
 
-    @Test
-    public void shouldReturnCorrectDeletedJobInfo() {
-        final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
-                .force(false)
-                .id(1L)
-                .user(SGEUSER)
+    private static Job pendingJobTemplate() {
+        return Job.builder()
+                .id(SOME_JOB_ID_2)
+                .name(SOME_JOB_NAME_2)
+                .priority(SOME_JOB_PRIORITY)
+                .owner(USER_NAME)
+                .queueName(SOME_QUEUE_NAME)
+                .submissionTime(LocalDateTime.parse(SOME_JOB_STARTING_TIME_2))
+                .slots(SOME_SLOTS_AMOUNT)
+                .state(JobState.builder()
+                        .category(JobState.Category.PENDING)
+                        .state(PENDING_STRING)
+                        .stateCode(SOME_PENDING_STATUS_CODE)
+                        .build())
                 .build();
-        final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
-                .user(SGEUSER)
-                .build();
-        final CommandResult commandResult = new CommandResult();
-        commandResult.setStdOut(List.of(SUCCESSFULLY_DELETED));
-        mockCommandCompilation(QDEL_COMMAND, commandResult, QDEL_COMMAND, USER_QDEL, SGEUSER, ONE);
-        doReturn(commandResult).when(mockCmdExecutor).execute(QDEL_COMMAND, USER_QDEL, SGEUSER, ONE);
-        final DeletedJobInfo result = sgeJobProvider.deleteJob(deleteJobFilter);
-        Assertions.assertEquals(expectedDeletedJobInfo, result);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideCorrectCommands")
-    public void shouldReturnResponseAndDontThrowsException(final String[] command) {
-        final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
-                .force(false)
-                .id(1L)
-                .user(SGEUSER)
-                .build();
-        final DeletedJobInfo expectedDeletedJobInfo = DeletedJobInfo.builder()
-                .id(List.of(1L))
-                .user(SGEUSER)
-                .build();
-        final CommandResult commandResult = new CommandResult();
-        commandResult.setStdOut(List.of(SUCCESSFULLY_DELETED));
-        mockCommandCompilation(QDEL_COMMAND, commandResult, command);
-        doReturn(commandResult).when(mockCmdExecutor).execute(command);
-        final DeletedJobInfo result = sgeJobProvider.deleteJob(deleteJobFilter);
-        Assertions.assertEquals(expectedDeletedJobInfo, result);
-    }
-
-    static Stream<Arguments> provideCorrectCommands() {
-        return mapObjectsToArgumentsStream(
-                new String[]{QDEL_COMMAND, FOUR},
-                new String[]{QDEL_COMMAND, USER_QDEL, SGEUSER},
-                new String[]{QDEL_COMMAND, ELEVEN},
-                new String[]{QDEL_COMMAND, USER_QDEL, SGEUSER, ONE},
-                new String[]{QDEL_COMMAND, FORCED_QDEL, EIGHT},
-                new String[]{QDEL_COMMAND, FORCED_QDEL, SGEUSER},
-                new String[]{QDEL_COMMAND, FORCED_QDEL, SGEUSER, THIRTEEN}
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideBadCommands")
-    public void shouldThrowsExceptionWithNotEmptyMessage(final String[] command) {
-        final MockQdelCmdExecutor mockQdelCmdExecutor = new MockQdelCmdExecutor();
-        final CommandResult commandResult = mockQdelCmdExecutor.execute(command);
-        mockCommandCompilation(QDEL_COMMAND, commandResult, command);
-        doReturn(commandResult).when(mockCmdExecutor).execute(command);
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
-                sgeJobProvider.deleteJob(new DeleteJobFilter()));
-        Assertions.assertNotNull(thrown.getMessage());
-    }
-
-    static Stream<Arguments> provideBadCommands() {
-        return mapObjectsToArgumentsStream(
-                new String[]{QDEL_COMMAND, FORCED_QDEL, SGE_USER},
-                new String[]{QDEL_COMMAND, USER_QDEL, SGE_USER},
-                new String[]{QDEL_COMMAND, NINE},
-                new String[]{QDEL_COMMAND, USER_QDEL},
-                new String[]{QDEL_COMMAND, FORCED_QDEL, NINE}
-        );
-    }
-
-    private static class MockQdelCmdExecutor implements CmdExecutor {
-        @Override
-        public final CommandResult execute(final String... arguments) {
-            final int exitCode;
-            final List<String> out = new ArrayList<>();
-            final List<String> err = new ArrayList<>();
-            final String argumentsAsString = Arrays.stream(arguments).map(Object::toString)
-                    .collect(Collectors.joining(SPACE));
-
-            if (Arrays.asList(arguments).contains(NINE)) {
-                exitCode = 1;
-                out.add(JOB_DOES_NOT_EXISTS);
-            } else if (Arrays.asList(arguments).contains(FORCED_QDEL)
-                    && (Arrays.asList(arguments).contains(SGEUSER)
-                    || argumentsAsString.matches(NUMBER_FIND_PATTERN))) {
-                exitCode = 1;
-                out.add(HAS_DELETED_JOB);
-            } else if (Arrays.asList(arguments).contains(USER_QDEL) && !Arrays.asList(arguments).contains(SGEUSER)) {
-                exitCode = 1;
-                out.add(HAS_NOT_SUBMITTED_JOB);
-            } else if (argumentsAsString.matches(NUMBER_FIND_PATTERN)
-                    || Arrays.asList(arguments).contains(USER_QDEL)
-                    && Arrays.asList(arguments).contains(SGEUSER)) {
-                exitCode = 0;
-                out.add(HAS_DELETED_JOB);
-            } else {
-                exitCode = 1;
-                out.add(JOB_DOES_NOT_EXISTS);
-            }
-            return new CommandResult(out, exitCode, err);
-        }
-    }
-
-    private static Stream<Arguments> mapObjectsToArgumentsStream(final Object... args) {
-        return Stream.of(args).map(Arguments::of);
     }
 
     private void mockCommandCompilation(final String command, final CommandResult commandResult,
                                         final String... compiledArray) {
-        doReturn(compiledArray).when(commandCompiler).compileCommand(Mockito.eq(EngineType.SGE),
-                Mockito.matches(command),
-                Mockito.any());
-        doReturn(commandResult).when(mockCmdExecutor).execute(compiledArray);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideWrongDeleteRequests")
-    public void shouldThrowsExceptionDuringDeletionBecauseNotCorrectRequest(final boolean isForce, final Long id,
-                                                                            final String user) {
-        final DeleteJobFilter deleteJobFilter = DeleteJobFilter.builder()
-                .force(isForce)
-                .id(id)
-                .user(user)
-                .build();
-        final Throwable thrown = Assertions.assertThrows(GridEngineException.class, () ->
-                sgeJobProvider.deleteJob(deleteJobFilter));
-        Assertions.assertNotNull(thrown.getMessage());
-    }
-
-    static Stream<Arguments> provideWrongDeleteRequests() {
-        return Stream.of(
-                Arguments.of(false, 0L, SGEUSER),
-                Arguments.of(true, null, EMPTY_STRING),
-                Arguments.of(false, null, null)
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("parameters")
-    public void shouldReturnCorrectStateCommand(final String jobState) {
-        final List<Job> expectedFilteredJob = correctJobFilling();
-
-        final CommandResult commandResult = new CommandResult();
-        commandResult.setStdOut(Collections.singletonList(VALID_XML));
-        commandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(QSTAT_COMMAND, commandResult, TYPE_XML);
-        doReturn(jobState).when(mockJobFilter).getState();
-        final Listing<Job> result = sgeJobProvider.filterJobs(null);
-        Mockito.verify(commandCompiler).compileCommand(engineTypeCaptor.capture(),
-                commandCaptor.capture(),
-                contextCaptor.capture());
-
-        if (jobState.equals(PENDING_STRING)) {
-            Assertions.assertEquals(expectedFilteredJob.get(1), result.getElements().get(0));
-        }
-        if (jobState.equals(SUSPENDED_STRING)) {
-            Assertions.assertEquals(expectedFilteredJob.get(2), result.getElements().get(1));
-        }
-        if (jobState.equals(RUNNING_STRING)) {
-            Assertions.assertEquals(expectedFilteredJob.get(0), result.getElements().get(2));
-        }
-    }
-
-    static Stream<Arguments> parameters() {
-        return Stream.of(
-                        RUNNING_STRING,
-                        PENDING_STRING,
-                        SUSPENDED_STRING)
-                .map(Arguments::of);
-    }
-
-    private static List<Job> correctJobFilling() {
-        final Job running = Job.builder()
-                .id(8)
-                .name(SOME_JOB_NAME_1)
-                .priority(0.55500)
-                .owner(SGEUSER)
-                .queueName("main@c242f10e1253")
-                .submissionTime(LocalDateTime.parse("2021-07-02T10:46:14"))
-                .slots(1)
-                .state(JobState
-                        .builder()
-                        .category(JobState.Category.RUNNING)
-                        .state(RUNNING_STRING)
-                        .stateCode("r")
-                        .build())
-                .build();
-        final Job pending = Job.builder()
-                .id(2)
-                .name(SOME_JOB_NAME_1)
-                .priority(0.00000)
-                .owner(SGEUSER)
-                .queueName(EMPTY_STRING)
-                .submissionTime(LocalDateTime.parse("2021-06-30T17:27:30"))
-                .slots(1)
-                .state(JobState
-                        .builder()
-                        .category(JobState.Category.PENDING)
-                        .state(PENDING_STRING)
-                        .stateCode("qw")
-                        .build())
-                .build();
-        final Job suspended = Job.builder()
-                .id(9)
-                .name(SOME_JOB_NAME_1)
-                .priority(0.00000)
-                .owner(SGEUSER)
-                .queueName(EMPTY_STRING)
-                .submissionTime(LocalDateTime.parse("2021-06-30T17:27:30"))
-                .slots(1)
-                .state(JobState
-                        .builder()
-                        .category(JobState.Category.SUSPENDED)
-                        .state(SUSPENDED_STRING)
-                        .stateCode("s")
-                        .build())
-                .build();
-        return Arrays.asList(running, pending, suspended);
-    }
-
-    @Test
-    void shouldReturnCorrectObjectWhenGettingJobLogInfo() {
-        final List<String> testStdOut = Collections.singletonList("Test line for StdOut.");
-        final JobLogInfo expectedJobLogInfo = new JobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE,
-                testStdOut, SOME_LINES, SOME_BYTES);
-
-        final CommandResult infoCommandResult = new CommandResult();
-        infoCommandResult.setStdOut(INFO_COMMAND_RESULT_STDOUT);
-        infoCommandResult.setStdErr(EMPTY_LIST);
-
-        final CommandResult linesCommandResult = new CommandResult();
-        linesCommandResult.setStdOut(testStdOut);
-        linesCommandResult.setStdErr(EMPTY_LIST);
-
-        mockCommandCompilation(GET_LOGFILE_INFO_COMMAND, infoCommandResult, "wc", "-l", "-c", LOG_FILE_NAME);
-        mockCommandCompilation(GET_LOG_LINES_COMMAND, linesCommandResult, "tail", "-n", "1", LOG_FILE_NAME);
-
-        final JobLogInfo result = sgeJobProvider.getJobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE, 1, false);
-        Assertions.assertEquals(expectedJobLogInfo, result);
-    }
-
-    @Test
-    void shouldTrowsExceptionWhenGettingJobLogInfoWithBadRequest() {
-        final int someBadCountLines = -5;
-        final GridEngineException thrown = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.getJobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE, someBadCountLines, false));
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, thrown.getHttpStatus());
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideCommandResultsForGettingJobLogInfoTesting")
-    void shouldTrowsExceptionWhenGettingJobLogInfoWhenReceivedBadCommandResult(
-            final int infoCommandResultStatus,
-            final int linesCommandResultStatus,
-            final List<String> infoCommandResultStdOut,
-            final HttpStatus expectedHttpStatus) {
-        final CommandResult infoCommandResult = new CommandResult();
-        infoCommandResult.setStdOut(infoCommandResultStdOut);
-        infoCommandResult.setExitCode(infoCommandResultStatus);
-
-        final CommandResult linesCommandResult = new CommandResult();
-        linesCommandResult.setExitCode(linesCommandResultStatus);
-
-        mockCommandCompilation(GET_LOGFILE_INFO_COMMAND, infoCommandResult, "wc", "-l", "-c", LOG_FILE_NAME);
-        mockCommandCompilation(GET_LOG_LINES_COMMAND, linesCommandResult, "tail", "-n", "1", LOG_FILE_NAME);
-
-        final GridEngineException result = Assertions.assertThrows(GridEngineException.class,
-                () -> sgeJobProvider.getJobLogInfo(SOME_JOB_ID, SOME_LOG_TYPE, 1, false));
-        Assertions.assertEquals(expectedHttpStatus, result.getHttpStatus());
-    }
-
-    static Stream<Arguments> provideCommandResultsForGettingJobLogInfoTesting() {
-        return Stream.of(
-                Arguments.of(0, 1, INFO_COMMAND_RESULT_STDOUT, HttpStatus.NOT_FOUND),
-                Arguments.of(1, 0, INFO_COMMAND_RESULT_STDOUT, HttpStatus.NOT_FOUND),
-                Arguments.of(1, 1, INFO_COMMAND_RESULT_STDOUT, HttpStatus.NOT_FOUND),
-                Arguments.of(0, 0, Collections.singletonList(LOG_FILE_NAME), HttpStatus.INTERNAL_SERVER_ERROR));
+        Mockito.doReturn(compiledArray).when(commandCompiler).compileCommand(Mockito.eq(CommandType.SGE),
+                Mockito.matches(command), Mockito.any());
+        Mockito.doReturn(commandResult).when(mockCmdExecutor).execute(compiledArray);
     }
 }

@@ -21,7 +21,7 @@ package com.epam.grid.engine.provider.healthcheck.slurm;
 
 import com.epam.grid.engine.cmd.GridEngineCommandCompiler;
 import com.epam.grid.engine.cmd.SimpleCmdExecutor;
-import com.epam.grid.engine.entity.EngineType;
+import com.epam.grid.engine.entity.CommandType;
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
 import com.epam.grid.engine.provider.utils.slurm.healthcheck.ShowConfigCommandParser;
@@ -39,7 +39,7 @@ import org.thymeleaf.context.Context;
 @ConditionalOnProperty(name = "grid.engine.type", havingValue = "SLURM")
 public class SlurmHealthCheckProvider implements HealthCheckProvider {
 
-    private static final String SHOWCONFIG_COMMAND = "showConfig";
+    private static final String SHOW_CONFIG_COMMAND = "show_config";
 
     private final SimpleCmdExecutor simpleCmdExecutor;
     private final GridEngineCommandCompiler commandCompiler;
@@ -48,11 +48,11 @@ public class SlurmHealthCheckProvider implements HealthCheckProvider {
      * This method tells which grid engine is used.
      *
      * @return Type of grid engine
-     * @see EngineType
+     * @see CommandType
      */
     @Override
-    public EngineType getProviderType() {
-        return EngineType.SLURM;
+    public CommandType getProviderType() {
+        return CommandType.SLURM;
     }
 
     /**
@@ -71,7 +71,7 @@ public class SlurmHealthCheckProvider implements HealthCheckProvider {
     }
 
     private String[] getShowConfigCommand() {
-        return commandCompiler.compileCommand(getProviderType(), SHOWCONFIG_COMMAND, new Context());
+        return commandCompiler.compileCommand(getProviderType(), SHOW_CONFIG_COMMAND, new Context());
     }
 
 }
