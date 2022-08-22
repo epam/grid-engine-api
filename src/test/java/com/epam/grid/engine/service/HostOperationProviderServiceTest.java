@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class HostOperationProviderServiceTest {
 
     private static final String TEST = "test-ip";

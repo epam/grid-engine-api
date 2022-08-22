@@ -51,7 +51,7 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_LIS
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.EMPTY_STRING;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class SgePeProviderTest {
 
     private static final List<String> VALID_PE = List.of(

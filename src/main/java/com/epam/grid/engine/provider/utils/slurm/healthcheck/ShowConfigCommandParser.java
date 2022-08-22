@@ -91,23 +91,18 @@ public class ShowConfigCommandParser {
     }
 
     private static long parseStatusCode(final List<String> stdOut) {
-        final long statusCode;
         final List<String> statusString = List.of(stdOut.get(stdOut.size() - 1)
                 .replaceAll(SPACES_REGEX, SPACE)
                 .split(SPACE));
         final String status = statusString.get(statusString.size() - 1);
         switch (status) {
             case UP_STATE:
-                statusCode = 0L;
-                break;
+                return 0L;
             case DOWN_STATE:
-                statusCode = 2L;
-                break;
+                return 2L;
             default:
-                statusCode = NOT_PROVIDED;
-                break;
+                return NOT_PROVIDED;
         }
-        return statusCode;
     }
 
     private static GridEngineStatus getStatus(final long status) {

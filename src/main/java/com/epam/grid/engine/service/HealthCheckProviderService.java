@@ -21,7 +21,7 @@ package com.epam.grid.engine.service;
 
 import com.epam.grid.engine.entity.healthcheck.HealthCheckInfo;
 import com.epam.grid.engine.provider.healthcheck.HealthCheckProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -29,19 +29,10 @@ import org.springframework.stereotype.Service;
  * and calls appropriate methods.
  */
 @Service
+@RequiredArgsConstructor
 public class HealthCheckProviderService {
 
     private final HealthCheckProvider healthCheckProvider;
-
-    /**
-     * Constructor, sets created healthCheckProvider bean to the class field.
-     * @param healthCheckProvider created HealthCheckProvider
-     * @see HealthCheckProvider
-     */
-    @Autowired
-    public HealthCheckProviderService(final HealthCheckProvider healthCheckProvider) {
-        this.healthCheckProvider = healthCheckProvider;
-    }
 
     /**
      * This method passes the request on to {@link HealthCheckProvider}

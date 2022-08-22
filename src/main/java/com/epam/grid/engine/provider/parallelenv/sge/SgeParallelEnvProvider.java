@@ -32,7 +32,7 @@ import com.epam.grid.engine.entity.parallelenv.sge.SgeParallelEnv;
 import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.mapper.parallelenv.sge.SgeParallelEnvMapper;
 import com.epam.grid.engine.provider.parallelenv.ParallelEnvProvider;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import com.epam.grid.engine.provider.utils.sge.common.SgeOutputParsingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,7 +51,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils.determineStatus;
+import static com.epam.grid.engine.provider.utils.CommandsUtils.determineStatus;
 import static com.epam.grid.engine.provider.utils.sge.common.SgeEntitiesRegistrationUtils.normalizePathToUnixFormat;
 import static com.epam.grid.engine.provider.utils.sge.common.SgeEntitiesRegistrationUtils.deleteTemporaryDescriptionFile;
 
@@ -237,7 +237,7 @@ public class SgeParallelEnvProvider implements ParallelEnvProvider {
 
     private void verifyProcessStatus(final CommandResult commandResult, final HttpStatus status) {
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult, status);
+            CommandsUtils.throwExecutionDetails(commandResult, status);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }
@@ -288,7 +288,7 @@ public class SgeParallelEnvProvider implements ParallelEnvProvider {
         }
 
         throw new GridEngineException(determineStatus(commandResult.getStdErr()),
-                SgeCommandsUtils.mergeOutputLines(commandResult.getStdErr()));
+                CommandsUtils.mergeOutputLines(commandResult.getStdErr()));
     }
 
     private String[] buildDeleteCommand(final String parallelEnv) {
@@ -307,7 +307,7 @@ public class SgeParallelEnvProvider implements ParallelEnvProvider {
         final CommandResult commandResult = simpleCmdExecutor.execute(envCommand);
 
         if (commandResult.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(commandResult);
+            CommandsUtils.throwExecutionDetails(commandResult);
         } else if (!commandResult.getStdErr().isEmpty()) {
             log.warn(commandResult.getStdErr().toString());
         }

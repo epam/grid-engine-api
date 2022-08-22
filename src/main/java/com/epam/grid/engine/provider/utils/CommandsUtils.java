@@ -17,7 +17,7 @@
  *
  */
 
-package com.epam.grid.engine.provider.utils.sge.common;
+package com.epam.grid.engine.provider.utils;
 
 import com.epam.grid.engine.entity.CommandResult;
 import com.epam.grid.engine.exception.GridEngineException;
@@ -28,15 +28,20 @@ import org.springframework.http.HttpStatus;
 import java.util.List;
 
 import static com.epam.grid.engine.utils.TextConstants.NEW_LINE_DELIMITER;
+import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class SgeCommandsUtils {
+public final class CommandsUtils {
 
     private static final String MUST_BE_MANAGER = "must be manager for this operation";
 
     public static void throwExecutionDetails(final CommandResult result, final HttpStatus httpStatus) {
-        final String message = result.getStdOut().isEmpty() ? mergeOutputLines(result.getStdErr()) :
-                mergeOutputLines(result.getStdOut()) + NEW_LINE_DELIMITER + mergeOutputLines(result.getStdErr());
+        final String message = result.getStdOut().isEmpty()
+                ? mergeOutputLines(result.getStdErr())
+                : mergeOutputLines(result.getStdOut())
+                    + (result.getStdErr().isEmpty()
+                    ? EMPTY_STRING
+                    : NEW_LINE_DELIMITER + mergeOutputLines(result.getStdErr()));
         throw new GridEngineException(httpStatus, message);
     }
 

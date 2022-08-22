@@ -23,7 +23,7 @@ import com.epam.grid.engine.entity.ParallelEnvFilter;
 import com.epam.grid.engine.entity.parallelenv.ParallelEnv;
 import com.epam.grid.engine.entity.parallelenv.PeRegistrationVO;
 import com.epam.grid.engine.provider.parallelenv.ParallelEnvProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,20 +32,10 @@ import java.util.List;
  * This class determines which of the grid engines shall be used and calls appropriate methods.
  */
 @Service
+@RequiredArgsConstructor
 public class ParallelEnvOperationProviderService {
 
     private final ParallelEnvProvider parallelEnvProvider;
-
-    /**
-     * Constructor, sets created parallelEnvProvider bean to the class field.
-     *
-     * @param parallelEnvProvider created ParallelEnvProvider
-     * @see ParallelEnvProvider
-     */
-    @Autowired
-    public ParallelEnvOperationProviderService(final ParallelEnvProvider parallelEnvProvider) {
-        this.parallelEnvProvider = parallelEnvProvider;
-    }
 
     /**
      * This method processes the request to provider and returns listing of pe according to filter.

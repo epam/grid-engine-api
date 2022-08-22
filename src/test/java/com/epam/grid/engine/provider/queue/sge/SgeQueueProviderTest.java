@@ -50,7 +50,7 @@ import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SINGLETON
 import static com.epam.grid.engine.provider.utils.sge.TestSgeConstants.SPACE;
 import static org.mockito.Mockito.doReturn;
 
-@SpringBootTest
+@SpringBootTest(properties = {"grid.engine.type=SGE"})
 public class SgeQueueProviderTest {
 
     private static final List<String> validQueue = List.of(

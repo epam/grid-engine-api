@@ -40,7 +40,7 @@ import com.epam.grid.engine.exception.GridEngineException;
 import com.epam.grid.engine.provider.job.JobProvider;
 import com.epam.grid.engine.provider.utils.JaxbUtils;
 import com.epam.grid.engine.provider.utils.sge.job.QstatCommandParser;
-import com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils;
+import com.epam.grid.engine.provider.utils.CommandsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.epam.grid.engine.provider.utils.sge.common.SgeCommandsUtils.mergeOutputLines;
+import static com.epam.grid.engine.provider.utils.CommandsUtils.mergeOutputLines;
 import static com.epam.grid.engine.utils.TextConstants.COMMA;
 import static com.epam.grid.engine.utils.TextConstants.DOT;
 import static com.epam.grid.engine.utils.TextConstants.EMPTY_STRING;
@@ -140,7 +140,7 @@ public class SgeJobProvider implements JobProvider {
     public Listing<Job> filterJobs(final JobFilter jobFilter) {
         final CommandResult result = simpleCmdExecutor.execute(makeQstatCommand(jobFilter));
         if (result.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(result);
+            CommandsUtils.throwExecutionDetails(result);
         } else if (!result.getStdErr().isEmpty()) {
             log.warn(result.getStdErr().toString());
         }
@@ -289,7 +289,7 @@ public class SgeJobProvider implements JobProvider {
     private String getResultOfExecutedCommand(final CmdExecutor cmdExecutor, final String[] command) {
         final CommandResult result = cmdExecutor.execute(command);
         if (result.getExitCode() != 0) {
-            SgeCommandsUtils.throwExecutionDetails(result, HttpStatus.INTERNAL_SERVER_ERROR);
+            CommandsUtils.throwExecutionDetails(result, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return parseJobId(result.getStdOut().get(0));
     }
